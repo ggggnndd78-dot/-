@@ -1,0 +1,61 @@
+{
+  "name": "ghiyarak-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node dist/src/main.js",
+    "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "build": "npx prisma generate && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "db:init": "npm run prisma:generate && prisma migrate deploy && npm run prisma:seed",
+    "db:reset": "prisma migrate reset",
+    "start:dev:once": "ts-node --transpile-only src/main.ts",
+    "test": "node scripts/qa/static-check.js",
+    "test:unit": "node scripts/qa/static-check.js",
+    "test:smoke": "node scripts/qa/smoke-check.js",
+    "qa:all": "npm run typecheck && npm run test && npm run test:smoke",
+    "preflight": "node scripts/deployment/preflight.js",
+    "build:prod": "npm run preflight && npm run build",
+    "start:prod": "node dist/src/main.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.27",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.27",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/platform-express": "^11.1.27",
+    "@nestjs/swagger": "^11.4.4",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "helmet": "^7.1.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1",
+    "nodemailer": "^6.10.1",
+    "firebase-admin": "^13.0.2",
+    "xlsx": "^0.18.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2",
+    "ts-node-dev": "^2.0.0",
+    "@types/nodemailer": "^6.4.17"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "overrides": {
+    "js-yaml": "^4.2.0",
+    "qs": "^6.15.2"
+  }
+}

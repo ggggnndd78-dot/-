@@ -1,0 +1,20 @@
+Ghiyarak Electronic Platform - Package Integrity Report
+
+Current scope added: Cart and Order Management.
+
+Verified by static inspection:
+- Backend cart controller/service exist.
+- Backend orders controller/service updated for customer checkout.
+- Merchant order status transitions updated.
+- Admin order list/detail endpoints added.
+- Prisma schema contains carts, cart_items, orders, order_items, order_status_history, invoices, coupons, and order_fees support.
+- Migration added for invoice/order fee tables and order status normalization.
+- Flutter cart, checkout preview, my orders, and merchant orders integrations are present.
+
+Not executed in this container:
+- npm install
+- prisma generate
+- database migration
+- flutter analyze/build
+
+Run the normal local checklist after extracting the archive.

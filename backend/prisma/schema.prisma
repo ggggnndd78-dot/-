@@ -1,0 +1,4014 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum OtpPurpose {
+  LOGIN
+  REGISTER
+  EMPLOYEE_INVITE
+  PASSWORD_RESET
+}
+
+enum OtpRequestStatus {
+  PENDING
+  CONSUMED
+  EXPIRED
+}
+
+enum OrganizationType {
+  MERCHANT
+  WORKSHOP
+  WAREHOUSE
+}
+
+enum OrganizationStatus {
+  DRAFT
+  PENDING_REVIEW
+  DOCUMENTS_REQUIRED
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+
+enum OrganizationMemberStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+enum EmployeeInvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+enum VerificationRequestStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_REVIEW
+  UNDER_REVIEW
+  DOCUMENTS_REQUIRED
+  APPROVED
+  REJECTED
+  SUSPENDED
+  WITHDRAWN
+}
+
+enum VerificationDocumentType {
+  COMMERCIAL_REGISTRATION
+  SHOP_GUARANTEE
+  NATIONAL_ID
+  STORE_FRONT
+  BANK_PROOF
+  PASSPORT
+  BANK_STATEMENT
+  OTHER
+}
+
+model User {
+  id                   Int                  @id @default(autoincrement())
+  publicId             String               @unique @default(cuid())
+  phoneE164            String?              @map("phone_e164") @db.VarChar(20)
+  phoneNormalized      String?              @unique @map("phone_normalized") @db.VarChar(20)
+  email                String?              @unique @db.VarChar(255)
+  displayName          String?              @map("display_name") @db.VarChar(120)
+  status               UserStatus           @default(ACTIVE)
+  isPhoneVerified      Boolean              @default(false) @map("is_phone_verified")
+  isEmailVerified      Boolean              @default(false) @map("is_email_verified")
+  locale               String               @default("ar") @db.VarChar(10)
+  failedLoginCount     Int                  @default(0) @map("failed_login_count")
+  lockedUntil          DateTime?            @map("locked_until")
+  lastLoginAt          DateTime?            @map("last_login_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  customerProfile      CustomerProfile?
+  oauthAccounts        OauthAccount[]
+  otpRequests          OtpRequest[]
+  refreshTokens        RefreshToken[]
+  userRoles            UserRole[]
+  customerVehicles     CustomerVehicle[]
+  organizationMembers  OrganizationMember[]
+  submittedVerifications VerificationRequest[] @relation("VerificationSubmittedBy")
+  reviewedVerifications  VerificationRequest[] @relation("VerificationReviewedBy")
+  approvalActions      ApprovalAction[]
+  verificationReviewNotes VerificationReviewNote[]
+  verificationStatusChanges VerificationStatusHistory[]
+  listings             Listing[]
+  carts                Cart[]
+  orders               Order[]
+  orderStatusHistory   OrderStatusHistory[]
+  createdWorkshopServices WorkshopService[] @relation("WorkshopServiceCreatedBy")
+  createdServiceCategories ServiceCategory[] @relation("ServiceCategoryCreatedBy")
+  createdServices ServiceCatalog[] @relation("ServiceCatalogCreatedBy")
+  customerWorkshopBookings WorkshopBooking[] @relation("WorkshopBookingCustomer")
+  workshopBookingStatusHistory WorkshopBookingStatusHistory[] @relation("WorkshopBookingChangedBy")
+  workshopServiceOrders ServiceOrder[] @relation("ServiceOrderCustomer")
+  serviceOrderStatusHistory ServiceOrderStatusHistory[] @relation("ServiceOrderChangedBy")
+  workshopTechnicianProfiles WorkshopTechnician[] @relation("TechnicianUser")
+  maintenanceRecords MaintenanceRecord[] @relation("MaintenanceRecordCustomer")
+  paymentTransactions PaymentTransaction[] @relation("PaymentTransactionUser")
+  approvedPaymentTransactions PaymentTransaction[] @relation("PaymentApprovedBy")
+  uploadedPaymentProofs PaymentProof[] @relation("PaymentProofUploadedBy")
+  reviewedPaymentProofs PaymentProof[] @relation("PaymentProofReviewedBy")
+  requestedRefunds RefundRequest[] @relation("RefundRequestedBy")
+  approvedRefunds RefundRequest[] @relation("RefundApprovedBy")
+  approvedSettlements Settlement[] @relation("SettlementApprovedBy")
+  postedJournalEntries JournalEntry[] @relation("JournalPostedBy")
+  financialTransactions FinancialTransaction[] @relation("FinancialTransactionCustomer")
+  invoices Invoice[] @relation("InvoiceCustomer")
+  registeredDevices UserDevice[]
+  notifications Notification[]
+  emailNotificationLogs EmailNotificationLog[]
+  pushNotificationLogs PushNotificationLog[]
+  addresses Address[]
+  createdShipments Shipment[] @relation("ShipmentCreatedBy")
+  driverProfile Driver? @relation("DriverUser")
+  shipmentEvents ShipmentTrackingEvent[] @relation("ShipmentEventCreatedBy")
+  supportTickets SupportTicket[] @relation("SupportTicketRequester")
+  assignedSupportTickets SupportTicket[] @relation("SupportTicketAssignee")
+  supportMessages SupportTicketMessage[] @relation("SupportTicketMessageAuthor")
+  uploadedSupportAttachments SupportTicketAttachment[] @relation("SupportAttachmentUploadedBy")
+  complaints Complaint[] @relation("ComplaintRequester")
+  resolvedComplaints Complaint[] @relation("ComplaintResolvedBy")
+  createdHelpCenterCategories HelpCenterCategory[] @relation("HelpCenterCategoryCreatedBy")
+  createdHelpCenterArticles HelpCenterArticle[] @relation("HelpCenterArticleCreatedBy")
+  updatedHelpCenterArticles HelpCenterArticle[] @relation("HelpCenterArticleUpdatedBy")
+  createdFaqs Faq[] @relation("FaqCreatedBy")
+  createdWhatsappSupportLinks WhatsappSupportLink[] @relation("WhatsappSupportLinkCreatedBy")
+  productReviews ProductReview[]
+  merchantReviews MerchantReview[]
+  workshopReviews WorkshopReview[]
+  serviceReviews ServiceReview[]
+  reviewReplies ReviewReply[] @relation("ReviewReplyAuthor")
+  uploadedReviewMedia ReviewMedia[] @relation("ReviewMediaUploadedBy")
+  reviewModerationActions ReviewModerationAction[] @relation("ReviewModerationActor")
+  walletAccounts WalletAccount[]
+  walletLedgerEntries WalletLedgerEntry[] @relation("WalletLedgerCreatedBy")
+  loyaltyAccount LoyaltyAccount?
+  loyaltyPointTransactions LoyaltyPointTransaction[] @relation("LoyaltyTransactionUser")
+  createdLoyaltyTransactions LoyaltyPointTransaction[] @relation("LoyaltyTransactionCreatedBy")
+  couponRedemptions CouponRedemption[]
+  createdCoupons Coupon[] @relation("CouponCreatedBy")
+  createdRetentionCampaigns RetentionCampaign[] @relation("RetentionCampaignCreatedBy")
+  retentionCampaignEvents RetentionCampaignEvent[]
+  referralCodes ReferralCode[] @relation("ReferralCodeOwner")
+  referralsMade ReferralRelationship[] @relation("ReferralReferrer")
+  referralsReceived ReferralRelationship[] @relation("ReferralReferred")
+  referralRewards ReferralReward[] @relation("ReferralRewardUser")
+  createdReferralRewards ReferralReward[] @relation("ReferralRewardCreatedBy")
+  trustedDevices AuthTrustedDevice[]
+  authSessions AuthSession[]
+  productImportJobs ProductImportJob[]
+
+  @@map("iam_users")
+}
+
+model OauthAccount {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  providerCode   String   @map("provider_code") @db.VarChar(30)
+  providerUserId String   @map("provider_user_id") @db.VarChar(120)
+  providerEmail  String?  @map("provider_email") @db.VarChar(255)
+  linkedAt       DateTime @default(now()) @map("linked_at")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerCode, providerUserId])
+  @@map("iam_oauth_accounts")
+}
+
+model OtpRequest {
+  id          Int              @id @default(autoincrement())
+  publicId    String           @unique @default(cuid())
+  userId      Int?             @map("user_id")
+  targetType  String           @map("target_type") @db.VarChar(20)
+  targetValue String           @map("target_value") @db.VarChar(255)
+  purpose     OtpPurpose
+  otpHash     String           @map("otp_hash") @db.VarChar(255)
+  expiresAt   DateTime         @map("expires_at")
+  consumedAt  DateTime?        @map("consumed_at")
+  attempts    Int              @default(0)
+  maxAttempts Int              @default(5) @map("max_attempts")
+  status      OtpRequestStatus @default(PENDING)
+  ipAddress   String?          @map("ip_address") @db.VarChar(80)
+  userAgent   String?          @map("user_agent") @db.VarChar(500)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  user        User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetValue, purpose, status, createdAt])
+  @@index([userId, createdAt])
+  @@map("iam_otp_requests")
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  deviceId  Int?      @map("device_id")
+  sessionId Int?      @map("session_id")
+  ipAddress String?   @map("ip_address") @db.VarChar(80)
+  userAgent String?   @map("user_agent") @db.VarChar(500)
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device    AuthTrustedDevice? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  session   AuthSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([deviceId])
+  @@map("iam_refresh_tokens")
+}
+
+
+model AuthTrustedDevice {
+  id                Int           @id @default(autoincrement())
+  publicId          String        @unique @default(cuid())
+  userId            Int           @map("user_id")
+  deviceFingerprint String        @map("device_fingerprint") @db.VarChar(191)
+  deviceTokenHash   String        @map("device_token_hash") @db.VarChar(255)
+  deviceName        String?       @map("device_name") @db.VarChar(160)
+  platform          String        @default("UNKNOWN") @db.VarChar(40)
+  ipAddress         String?       @map("ip_address") @db.VarChar(80)
+  userAgent         String?       @map("user_agent") @db.VarChar(500)
+  status            String        @default("TRUSTED") @db.VarChar(30)
+  trustedAt         DateTime      @default(now()) @map("trusted_at")
+  lastUsedAt        DateTime?     @map("last_used_at")
+  revokedAt         DateTime?     @map("revoked_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions          AuthSession[]
+  refreshTokens     RefreshToken[]
+
+  @@unique([userId, deviceFingerprint])
+  @@index([userId, status, revokedAt])
+  @@index([deviceFingerprint])
+  @@map("auth_trusted_devices")
+}
+
+model AuthSession {
+  id              Int                @id @default(autoincrement())
+  publicId        String             @unique @default(cuid())
+  userId          Int                @map("user_id")
+  deviceId        Int?               @map("device_id")
+  status          String             @default("ACTIVE") @db.VarChar(30)
+  ipAddress       String?            @map("ip_address") @db.VarChar(80)
+  userAgent       String?            @map("user_agent") @db.VarChar(500)
+  permissionsHash String?            @map("permissions_hash") @db.VarChar(128)
+  expiresAt       DateTime?          @map("expires_at")
+  revokedAt       DateTime?          @map("revoked_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  lastSeenAt      DateTime           @default(now()) @map("last_seen_at")
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device          AuthTrustedDevice? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  refreshTokens   RefreshToken[]
+
+  @@index([userId, status, createdAt])
+  @@index([deviceId, status])
+  @@map("auth_sessions")
+}
+
+model GuestSession {
+  id               Int       @id @default(autoincrement())
+  publicId         String    @unique @default(cuid())
+  guestTokenHash   String    @map("guest_token_hash") @db.VarChar(255)
+  cityId           Int?      @map("city_id")
+  districtId       Int?      @map("district_id")
+  areaId           Int?      @map("area_id")
+  consumedByUserId Int?      @map("consumed_by_user_id")
+  expiresAt        DateTime  @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  city             City?     @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  district         District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  area             Area?     @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@map("iam_guest_sessions")
+}
+
+model Role {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique @db.VarChar(50)
+  name            String           @db.VarChar(100)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@map("iam_roles")
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique @db.VarChar(80)
+  name            String           @db.VarChar(120)
+  moduleCode      String           @map("module_code") @db.VarChar(50)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  rolePermissions RolePermission[]
+
+  @@map("iam_permissions")
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("iam_role_permissions")
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  roleId    Int      @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("iam_user_roles")
+}
+
+model CustomerProfile {
+  id               Int               @id @default(autoincrement())
+  userId           Int               @unique @map("user_id")
+  displayName      String?           @map("display_name") @db.VarChar(120)
+  cityId           Int?              @map("city_id")
+  districtId       Int?              @map("district_id")
+  areaId           Int?              @map("area_id")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city             City?             @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  district         District?         @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  area             Area?             @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  addresses        CustomerAddress[]
+
+  @@map("crm_customer_profiles")
+}
+
+model CustomerAddress {
+  id                Int             @id @default(autoincrement())
+  customerProfileId Int             @map("customer_profile_id")
+  label             String          @db.VarChar(60)
+  recipientName     String          @map("recipient_name") @db.VarChar(120)
+  phone             String          @db.VarChar(20)
+  cityId            Int             @map("city_id")
+  districtId        Int?            @map("district_id")
+  areaId            Int?            @map("area_id")
+  addressLine1      String          @map("address_line_1") @db.VarChar(255)
+  isDefault         Boolean         @default(false) @map("is_default")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  customerProfile   CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Cascade)
+  city              City            @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  district          District?       @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  area              Area?           @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@map("crm_customer_addresses")
+}
+
+model Country {
+  id        Int      @id @default(autoincrement())
+  isoCode   String   @unique @map("iso_code") @db.VarChar(3)
+  nameAr    String   @map("name_ar") @db.VarChar(120)
+  nameEn    String?  @map("name_en") @db.VarChar(120)
+  phoneCode String?  @map("phone_code") @db.VarChar(10)
+  isActive  Boolean  @default(true) @map("is_active")
+  states    State[]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("geo_countries")
+}
+
+model State {
+  id       Int      @id @default(autoincrement())
+  countryId Int     @map("country_id")
+  nameAr   String   @map("name_ar") @db.VarChar(120)
+  nameEn   String?  @map("name_en") @db.VarChar(120)
+  code     String?  @db.VarChar(20)
+  isActive Boolean  @default(true) @map("is_active")
+  country  Country  @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  cities   City[]
+
+  @@map("geo_states")
+}
+
+model City {
+  id                  Int                  @id @default(autoincrement())
+  stateId             Int                  @map("state_id")
+  nameAr              String               @map("name_ar") @db.VarChar(120)
+  nameEn              String?              @map("name_en") @db.VarChar(120)
+  code                String?              @db.VarChar(20)
+  isActive            Boolean              @default(true) @map("is_active")
+  state               State                @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  districts           District[]
+  customerProfiles    CustomerProfile[]
+  customerAddresses   CustomerAddress[]
+  guestSessions       GuestSession[]
+  organizationBranches OrganizationBranch[]
+  listings             Listing[]
+  orders               Order[]
+  serviceCategories    ServiceCategory[]
+  serviceCatalog        ServiceCatalog[]
+  workshopServices      WorkshopService[]
+  workshopBookings      WorkshopBooking[]
+  shipments           Shipment[]
+  localShippingCompanies LocalShippingCompany[]
+  drivers             Driver[]
+  deliveryFees        DeliveryFee[]
+  addresses           Address[]
+  deliveryZones       DeliveryZone[]
+  deliveryFee         CityDeliveryFee?
+
+  @@map("geo_cities")
+}
+
+model District {
+  id                  Int                  @id @default(autoincrement())
+  cityId              Int                  @map("city_id")
+  nameAr              String               @map("name_ar") @db.VarChar(120)
+  nameEn              String?              @map("name_en") @db.VarChar(120)
+  isActive            Boolean              @default(true) @map("is_active")
+  city                City                 @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  areas               Area[]
+  customerProfiles    CustomerProfile[]
+  customerAddresses   CustomerAddress[]
+  guestSessions       GuestSession[]
+  organizationBranches OrganizationBranch[]
+  addresses           Address[]
+  deliveryZones       DeliveryZone[]
+
+  @@map("geo_districts")
+}
+
+model Area {
+  id                  Int                  @id @default(autoincrement())
+  districtId          Int                  @map("district_id")
+  nameAr              String               @map("name_ar") @db.VarChar(120)
+  nameEn              String?              @map("name_en") @db.VarChar(120)
+  isActive            Boolean              @default(true) @map("is_active")
+  district            District             @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  customerProfiles    CustomerProfile[]
+  customerAddresses   CustomerAddress[]
+  guestSessions       GuestSession[]
+  organizationBranches OrganizationBranch[]
+  addresses           Address[]
+
+  @@map("geo_areas")
+}
+
+model Address {
+  id             Int       @id @default(autoincrement())
+  publicId       String    @unique @default(cuid()) @map("public_id")
+  userId         Int       @map("user_id")
+  label          String    @db.VarChar(60)
+  recipientName  String    @map("recipient_name") @db.VarChar(120)
+  phone          String    @db.VarChar(20)
+  cityId         Int       @map("city_id")
+  districtId     Int?      @map("district_id")
+  areaId         Int?      @map("area_id")
+  addressLine1   String    @map("address_line_1") @db.VarChar(255)
+  addressLine2   String?   @map("address_line_2") @db.VarChar(255)
+  latitude       Decimal?  @db.Decimal(10, 7)
+  longitude      Decimal?  @db.Decimal(10, 7)
+  isDefault      Boolean   @default(false) @map("is_default")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city           City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  district       District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  area           Area?     @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([cityId])
+  @@map("addresses")
+}
+
+model DeliveryZone {
+  id               Int       @id @default(autoincrement())
+  publicId         String    @unique @default(cuid()) @map("public_id")
+  cityId           Int       @map("city_id")
+  districtId       Int?      @map("district_id")
+  nameAr           String    @map("name_ar") @db.VarChar(120)
+  nameEn           String?   @map("name_en") @db.VarChar(120)
+  code             String?   @db.VarChar(40)
+  deliveryFee      Decimal   @default(0) @map("delivery_fee") @db.Decimal(12, 2)
+  currency         String    @default("YER") @db.VarChar(3)
+  estimatedMinDays Int?      @map("estimated_min_days")
+  estimatedMaxDays Int?      @map("estimated_max_days")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  city             City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  district         District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+
+  @@index([cityId])
+  @@index([districtId])
+  @@map("delivery_zones")
+}
+
+model CityDeliveryFee {
+  id                  Int      @id @default(autoincrement())
+  cityId              Int      @unique @map("city_id")
+  deliveryFee         Decimal  @default(0) @map("delivery_fee") @db.Decimal(12, 2)
+  currency            String   @default("YER") @db.VarChar(3)
+  isDeliveryAvailable Boolean  @default(true) @map("is_delivery_available")
+  estimatedMinDays    Int?     @map("estimated_min_days")
+  estimatedMaxDays    Int?     @map("estimated_max_days")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  city                City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@map("city_delivery_fees")
+}
+
+model VehicleMake {
+  id               Int               @id @default(autoincrement())
+  nameAr           String            @map("name_ar") @db.VarChar(120)
+  nameEn           String?           @map("name_en") @db.VarChar(120)
+  slug             String            @unique @db.VarChar(140)
+  isActive         Boolean           @default(true) @map("is_active")
+  models           VehicleModel[]
+  customerVehicles CustomerVehicle[]
+  productCompatibilities ProductCompatibility[]
+
+  @@map("vehicle_makes")
+}
+
+model VehicleModel {
+  id               Int               @id @default(autoincrement())
+  makeId           Int               @map("make_id")
+  nameAr           String            @map("name_ar") @db.VarChar(120)
+  nameEn           String?           @map("name_en") @db.VarChar(120)
+  slug             String            @db.VarChar(140)
+  isActive         Boolean           @default(true) @map("is_active")
+  make             VehicleMake       @relation(fields: [makeId], references: [id], onDelete: Restrict)
+  generations      VehicleGeneration[]
+  variants         VehicleVariant[]
+  customerVehicles CustomerVehicle[]
+  productCompatibilities ProductCompatibility[]
+
+  @@map("vehicle_models")
+}
+
+model VehicleGeneration {
+  id             Int              @id @default(autoincrement())
+  modelId        Int              @map("model_id")
+  generationName String           @map("generation_name") @db.VarChar(120)
+  yearFrom       Int              @map("year_from")
+  yearTo         Int?             @map("year_to")
+  model          VehicleModel     @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  variants       VehicleVariant[]
+
+  @@map("vehicle_generations")
+}
+
+model VehicleVariant {
+  id               Int               @id @default(autoincrement())
+  modelId          Int               @map("model_id")
+  generationId     Int?              @map("generation_id")
+  trimName         String            @map("trim_name") @db.VarChar(120)
+  yearFrom         Int               @map("year_from")
+  yearTo           Int?              @map("year_to")
+  transmissionType String?           @map("transmission_type") @db.VarChar(30)
+  fuelType         String?           @map("fuel_type") @db.VarChar(30)
+  isActive         Boolean           @default(true) @map("is_active")
+  model            VehicleModel      @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  generation       VehicleGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  customerVehicles CustomerVehicle[]
+  productCompatibilities ProductCompatibility[]
+
+  @@map("vehicle_variants")
+}
+
+model CustomerVehicle {
+  id         Int             @id @default(autoincrement())
+  publicId   String          @unique @default(cuid())
+  userId     Int             @map("user_id")
+  nickname   String?         @db.VarChar(80)
+  makeId     Int             @map("make_id")
+  modelId    Int             @map("model_id")
+  variantId  Int?            @map("variant_id")
+  yearValue  Int             @map("year_value")
+  isDefault  Boolean         @default(false) @map("is_default")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  make       VehicleMake     @relation(fields: [makeId], references: [id], onDelete: Restrict)
+  model      VehicleModel    @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  variant    VehicleVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  workshopBookings WorkshopBooking[]
+  serviceOrders ServiceOrder[]
+  maintenanceRecords MaintenanceRecord[]
+
+  @@map("vehicle_customer_vehicles")
+}
+
+model Organization {
+  id                Int                       @id @default(autoincrement())
+  publicId          String                    @unique @default(cuid())
+  organizationType  OrganizationType          @map("organization_type")
+  displayName       String                    @map("display_name") @db.VarChar(150)
+  legalName         String?                   @map("legal_name") @db.VarChar(150)
+  primaryPhone      String?                   @map("primary_phone") @db.VarChar(20)
+  status            OrganizationStatus        @default(DRAFT)
+  submittedAt       DateTime?                 @map("submitted_at")
+  approvedAt        DateTime?                 @map("approved_at")
+  rejectedAt        DateTime?                 @map("rejected_at")
+  rejectionReason   String?                   @map("rejection_reason") @db.VarChar(500)
+  isVerified        Boolean                   @default(false) @map("is_verified")
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  members           OrganizationMember[]
+  employeeInvitations EmployeeInvitation[]
+  branches          OrganizationBranch[]
+  merchantProfile   MerchantProfile?
+  workshopProfile   WorkshopProfile?
+  bankAccounts      BankAccount[]
+  verificationRequests VerificationRequest[]
+  approvalActions   ApprovalAction[]
+  verificationReviewNotes VerificationReviewNote[]
+  verificationStatusHistory VerificationStatusHistory[]
+  listings          Listing[]
+  orders            Order[]
+  serviceCategories ServiceCategory[]
+  serviceCatalog ServiceCatalog[]
+  workshopBranches WorkshopBranch[]
+  workshopServices WorkshopService[]
+  workshopTechnicians WorkshopTechnician[]
+  bookingSlots BookingSlot[]
+  workshopBookings WorkshopBooking[]
+  serviceOrders ServiceOrder[]
+  maintenanceRecords MaintenanceRecord[]
+  paymentTransactions PaymentTransaction[]
+  settlements Settlement[]
+  ledgerAccounts LedgerAccount[]
+  journalEntryLines JournalEntryLine[]
+  financialTransactions FinancialTransaction[]
+  merchantBalance MerchantBalance?
+  drivers Driver[]
+  localShippingCompanies LocalShippingCompany[]
+  deliveryFees DeliveryFee[]
+  shipments Shipment[]
+  supportTickets SupportTicket[]
+  complaints Complaint[]
+  merchantReviews MerchantReview[] @relation("MerchantReviews")
+  workshopReviews WorkshopReview[] @relation("WorkshopReviews")
+  serviceReviews ServiceReview[] @relation("ServiceReviews")
+  reviewReplies ReviewReply[]
+  reputationSummaries ReviewReputationSummary[]
+  walletAccounts WalletAccount[]
+  productImportJobs ProductImportJob[]
+  productImportMappings ProductImportMapping[]
+
+  @@map("org_organizations")
+}
+
+model OrganizationMember {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  userId         Int          @map("user_id")
+  memberRole     String       @map("member_role") @db.VarChar(40)
+  status         OrganizationMemberStatus @default(ACTIVE)
+  createdByUserId Int?        @map("created_by_user_id")
+  allBranches    Boolean      @default(true) @map("all_branches")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  permissions    OrganizationMemberPermission[]
+  branchAccess   OrganizationMemberBranchAccess[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("org_organization_members")
+}
+
+
+model EmployeeInvitation {
+  id                Int                      @id @default(autoincrement())
+  publicId          String                   @unique @default(cuid())
+  organizationId    Int                      @map("organization_id")
+  invitedEmail      String?                  @map("invited_email") @db.VarChar(255)
+  invitedPhone      String?                  @map("invited_phone") @db.VarChar(20)
+  displayName       String?                  @map("display_name") @db.VarChar(140)
+  memberRole        String                   @map("member_role") @db.VarChar(40)
+  status            EmployeeInvitationStatus @default(PENDING)
+  invitedByUserId   Int                      @map("invited_by_user_id")
+  acceptedByUserId  Int?                     @map("accepted_by_user_id")
+  expiresAt         DateTime                 @map("expires_at")
+  acceptedAt        DateTime?                @map("accepted_at")
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
+  organization      Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "oei_org_fk")
+
+  @@index([organizationId, status])
+  @@index([invitedEmail])
+  @@index([invitedPhone])
+  @@map("org_employee_invitations")
+}
+
+model OrganizationMemberPermission {
+  id                  Int                @id @default(autoincrement())
+  organizationMemberId Int               @map("organization_member_id")
+  permissionCode      String             @map("permission_code") @db.VarChar(100)
+  createdAt           DateTime           @default(now()) @map("created_at")
+  member              OrganizationMember @relation(fields: [organizationMemberId], references: [id], onDelete: Cascade, map: "omp_member_fk")
+
+  @@unique([organizationMemberId, permissionCode], map: "omp_member_perm_uq")
+  @@map("org_member_permissions")
+}
+
+model OrganizationMemberBranchAccess {
+  id                   Int                 @id @default(autoincrement())
+  organizationMemberId Int                 @map("organization_member_id")
+  branchId             Int                 @map("branch_id")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  member               OrganizationMember  @relation(fields: [organizationMemberId], references: [id], onDelete: Cascade, map: "omba_member_fk")
+  branch               OrganizationBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade, map: "omba_branch_fk")
+
+  @@unique([organizationMemberId, branchId], map: "omba_member_branch_uq")
+  @@map("org_member_branch_access")
+}
+
+model OrganizationBranch {
+  id                    Int                 @id @default(autoincrement())
+  publicId              String              @unique @default(cuid())
+  organizationId        Int                 @map("organization_id")
+  branchName            String              @map("branch_name") @db.VarChar(150)
+  email                 String?             @db.VarChar(255)
+  phone                 String?             @db.VarChar(20)
+  cityId                Int                 @map("city_id")
+  districtId            Int?                @map("district_id")
+  areaId                Int?                @map("area_id")
+  addressLine1          String?             @map("address_line_1") @db.VarChar(255)
+  latitude              Decimal?            @db.Decimal(10, 7)
+  longitude             Decimal?            @db.Decimal(10, 7)
+  mapUrl                String?             @map("map_url") @db.VarChar(500)
+  mapProvider           String              @default("GOOGLE_MAPS") @map("map_provider") @db.VarChar(40)
+  locationSelectedAt    DateTime?           @map("location_selected_at")
+  isHeadOffice          Boolean             @default(false) @map("is_head_office")
+  supportsPickup        Boolean             @default(true) @map("supports_pickup")
+  supportsDelivery      Boolean             @default(false) @map("supports_delivery")
+  supportsInstallation  Boolean             @default(false) @map("supports_installation")
+  supportsMobileService Boolean             @default(false) @map("supports_mobile_service")
+  isActive              Boolean             @default(true) @map("is_active")
+  temporarilyClosed     Boolean             @default(false) @map("temporarily_closed")
+  closedUntil           DateTime?           @map("closed_until")
+  closedReason          String?             @map("closed_reason") @db.VarChar(500)
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  city                  City                @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  district              District?           @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  area                  Area?               @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  businessHours         BranchBusinessHour[]
+  workshopBranch         WorkshopBranch?
+  bookingSlots           BookingSlot[]
+  employeeBranchAccess  OrganizationMemberBranchAccess[]
+  listings              Listing[]
+  productImportJobs     ProductImportJob[]
+  orders                Order[]
+  workshopServices      WorkshopService[]
+  workshopTechnicians   WorkshopTechnician[]
+  workshopBookings      WorkshopBooking[]
+  serviceOrders         ServiceOrder[]
+  drivers               Driver[]
+  deliveryFees          DeliveryFee[]
+  shipments             Shipment[]
+
+  @@map("org_organization_branches")
+}
+
+model MerchantProfile {
+  id                        Int          @id @default(autoincrement())
+  organizationId            Int          @unique @map("organization_id")
+  businessCategoryCode      String?      @map("business_category_code") @db.VarChar(50)
+  averagePreparationMinutes Int?         @map("average_preparation_minutes")
+  warrantyPolicyText        String?      @map("warranty_policy_text") @db.Text
+  returnPolicyText          String?      @map("return_policy_text") @db.Text
+  deliveryPolicyText        String?      @map("delivery_policy_text") @db.Text
+  minOrderAmount            Decimal?     @map("min_order_amount") @db.Decimal(12, 2)
+  createdAt                 DateTime     @default(now()) @map("created_at")
+  updatedAt                 DateTime     @updatedAt @map("updated_at")
+  organization              Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("org_merchant_profiles")
+}
+
+model WorkshopProfile {
+  id                       Int          @id @default(autoincrement())
+  organizationId           Int          @unique @map("organization_id")
+  serviceModeCode          String?      @map("service_mode_code") @db.VarChar(50)
+  acceptsDiagnosis         Boolean      @default(true) @map("accepts_diagnosis")
+  acceptsInstallation      Boolean      @default(true) @map("accepts_installation")
+  capacityPerDay           Int?         @map("capacity_per_day")
+  supportsEmergencyService Boolean      @default(false) @map("supports_emergency_service")
+  defaultDiagnosisFee      Decimal?     @map("default_diagnosis_fee") @db.Decimal(12, 2)
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
+  organization             Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("org_workshop_profiles")
+}
+
+model BranchBusinessHour {
+  id        Int                @id @default(autoincrement())
+  branchId  Int                @map("branch_id")
+  dayOfWeek Int                @map("day_of_week")
+  openTime  String?            @map("open_time") @db.VarChar(5)
+  closeTime String?            @map("close_time") @db.VarChar(5)
+  isClosed  Boolean            @default(false) @map("is_closed")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  branch    OrganizationBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, dayOfWeek])
+  @@map("org_branch_business_hours")
+}
+
+model BankAccount {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  bankName       String       @map("bank_name") @db.VarChar(120)
+  accountName    String       @map("account_name") @db.VarChar(120)
+  accountNumber  String       @map("account_number") @db.VarChar(50)
+  iban           String?      @db.VarChar(64)
+  isPrimary      Boolean      @default(false) @map("is_primary")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("org_bank_accounts")
+}
+
+model VerificationRequest {
+  id               Int                       @id @default(autoincrement())
+  publicId         String                    @unique @default(cuid())
+  organizationId   Int                       @map("organization_id")
+  submittedByUserId Int                      @map("submitted_by_user_id")
+  status           VerificationRequestStatus @default(DRAFT)
+  notes            String?                   @db.Text
+  reviewNotes      String?                   @map("review_notes") @db.Text
+  submittedAt      DateTime?                 @map("submitted_at")
+  reviewedAt       DateTime?                 @map("reviewed_at")
+  reviewedByUserId Int?                      @map("reviewed_by_user_id")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  submittedBy      User                      @relation("VerificationSubmittedBy", fields: [submittedByUserId], references: [id], onDelete: Restrict)
+  reviewedBy       User?                     @relation("VerificationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  documents        VerificationDocument[]
+  reviewNotesList  VerificationReviewNote[]
+  statusHistory    VerificationStatusHistory[]
+  approvalActions  ApprovalAction[]
+
+  @@index([organizationId, status])
+  @@index([submittedAt])
+  @@index([reviewedAt])
+  @@map("org_verification_requests")
+}
+
+model VerificationDocument {
+  id                    Int                     @id @default(autoincrement())
+  verificationRequestId Int                     @map("verification_request_id")
+  documentType          VerificationDocumentType @map("document_type")
+  fileName              String                  @map("file_name") @db.VarChar(255)
+  fileUrl               String                  @map("file_url") @db.VarChar(500)
+  mimeType              String?                 @map("mime_type") @db.VarChar(120)
+  fileSizeBytes         Int?                    @map("file_size_bytes")
+  fileContentBase64     String?                 @map("file_content_base64") @db.LongText
+  storageProvider       String                  @default("DATABASE") @map("storage_provider") @db.VarChar(40)
+  storageKey            String?                 @map("storage_key") @db.VarChar(255)
+  uploadStatus          String                  @default("UPLOADED") @map("upload_status") @db.VarChar(40)
+  side                  String?                 @db.VarChar(20)
+  notes                 String?                 @db.VarChar(500)
+  uploadedAt            DateTime                @default(now()) @map("uploaded_at")
+  verificationRequest   VerificationRequest     @relation(fields: [verificationRequestId], references: [id], onDelete: Cascade)
+
+  @@index([verificationRequestId, documentType])
+  @@map("org_verification_documents")
+}
+
+model VerificationReviewNote {
+  id                    Int                 @id @default(autoincrement())
+  verificationRequestId Int                 @map("verification_request_id")
+  organizationId        Int                 @map("organization_id")
+  actorUserId           Int                 @map("actor_user_id")
+  noteType              String              @default("REVIEW") @map("note_type") @db.VarChar(40)
+  note                  String              @db.Text
+  createdAt             DateTime            @default(now()) @map("created_at")
+  verificationRequest   VerificationRequest @relation(fields: [verificationRequestId], references: [id], onDelete: Cascade)
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor                 User                @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([verificationRequestId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("verification_review_notes")
+}
+
+model VerificationStatusHistory {
+  id                    Int                 @id @default(autoincrement())
+  verificationRequestId Int                 @map("verification_request_id")
+  organizationId        Int                 @map("organization_id")
+  fromStatus            String?             @map("from_status") @db.VarChar(40)
+  toStatus              String              @map("to_status") @db.VarChar(40)
+  changedByUserId       Int                 @map("changed_by_user_id")
+  reason                String?             @db.Text
+  createdAt             DateTime            @default(now()) @map("created_at")
+  verificationRequest   VerificationRequest @relation(fields: [verificationRequestId], references: [id], onDelete: Cascade)
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  changedBy             User                @relation(fields: [changedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([verificationRequestId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("verification_status_history")
+}
+
+model ApprovalAction {
+  id                  Int                 @id @default(autoincrement())
+  organizationId      Int                 @map("organization_id")
+  verificationRequestId Int?              @map("verification_request_id")
+  actedByUserId       Int                 @map("acted_by_user_id")
+  actionCode          String              @map("action_code") @db.VarChar(60)
+  notes               String?             @db.Text
+  createdAt           DateTime            @default(now()) @map("created_at")
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  verificationRequest VerificationRequest? @relation(fields: [verificationRequestId], references: [id], onDelete: SetNull)
+  actedBy             User                @relation(fields: [actedByUserId], references: [id], onDelete: Restrict)
+
+  @@map("admin_approval_actions")
+}
+
+
+enum ProductCondition {
+  NEW
+  USED
+  REFURBISHED
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  OUT_OF_STOCK
+  ARCHIVED
+}
+
+enum ListingApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+  ABANDONED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  READY_FOR_PICKUP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURN_REQUESTED
+  REFUNDED
+}
+
+enum FulfillmentMethod {
+  PICKUP
+  DELIVERY
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  CASH_ON_PICKUP
+  BANK_TRANSFER
+  WALLET
+  LOCAL_WALLET
+  PAYMENT_GATEWAY
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING_COD
+  WAITING_PROOF
+  PENDING_REVIEW
+  UNDER_REVIEW
+  PAID
+  CONFIRMED
+  FAILED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+
+
+enum WorkshopServiceStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum WorkshopTechnicianStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BookingSlotStatus {
+  AVAILABLE
+  FULL
+  CLOSED
+}
+
+enum WorkshopBookingStatus {
+  REQUESTED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum ServiceOrderStatus {
+  OPEN
+  DIAGNOSIS_IN_PROGRESS
+  WAITING_CUSTOMER_APPROVAL
+  WAITING_PARTS
+  IN_REPAIR
+  READY_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum ServiceOrderPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+
+model ServiceCategory {
+  id              Int                   @id @default(autoincrement())
+  publicId        String                @unique @default(cuid())
+  organizationId  Int?                  @map("organization_id")
+  cityId          Int?                  @map("city_id")
+  createdByUserId Int?                  @map("created_by_user_id")
+  code            String                @db.VarChar(80)
+  nameAr          String                @map("name_ar") @db.VarChar(160)
+  nameEn          String?               @map("name_en") @db.VarChar(160)
+  description     String?               @db.Text
+  icon            String?               @db.VarChar(80)
+  status          WorkshopServiceStatus @default(ACTIVE)
+  sortOrder       Int                   @default(0) @map("sort_order")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  organization    Organization?         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  city            City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  createdBy       User?                 @relation("ServiceCategoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  services        ServiceCatalog[]
+
+  @@unique([organizationId, code])
+  @@index([status, sortOrder])
+  @@map("service_categories")
+}
+
+model ServiceCatalog {
+  id                       Int                   @id @default(autoincrement())
+  publicId                 String                @unique @default(cuid())
+  categoryId               Int                   @map("category_id")
+  organizationId           Int?                  @map("organization_id")
+  cityId                   Int?                  @map("city_id")
+  createdByUserId          Int?                  @map("created_by_user_id")
+  code                     String                @db.VarChar(90)
+  nameAr                   String                @map("name_ar") @db.VarChar(180)
+  nameEn                   String?               @map("name_en") @db.VarChar(180)
+  description              String?               @db.Text
+  estimatedDurationMinutes Int?                  @map("estimated_duration_minutes")
+  basePrice                Decimal?              @map("base_price") @db.Decimal(12, 2)
+  currency                 String                @default("YER") @db.VarChar(3)
+  status                   WorkshopServiceStatus @default(ACTIVE)
+  sortOrder                Int                   @default(0) @map("sort_order")
+  createdAt                DateTime              @default(now()) @map("created_at")
+  updatedAt                DateTime              @updatedAt @map("updated_at")
+  category                 ServiceCategory       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  organization             Organization?         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  city                     City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  createdBy                User?                 @relation("ServiceCatalogCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workshopServices         WorkshopService[]
+
+  @@unique([organizationId, code])
+  @@index([categoryId, status])
+  @@index([cityId, status])
+  @@map("services")
+}
+
+model WorkshopBranch {
+  id                   Int                @id @default(autoincrement())
+  publicId             String             @unique @default(cuid())
+  organizationId       Int                @map("organization_id")
+  organizationBranchId Int                @unique @map("organization_branch_id")
+  isBookingEnabled     Boolean            @default(true) @map("is_booking_enabled")
+  defaultSlotCapacity  Int                @default(1) @map("default_slot_capacity")
+  slotDurationMinutes  Int                @default(60) @map("slot_duration_minutes")
+  notes                String?            @db.VarChar(500)
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationBranch   OrganizationBranch @relation(fields: [organizationBranchId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, isBookingEnabled])
+  @@map("workshop_branches")
+}
+
+model BookingSlot {
+  id                Int                 @id @default(autoincrement())
+  publicId          String              @unique @default(cuid())
+  organizationId    Int                 @map("organization_id")
+  branchId          Int                 @map("branch_id")
+  workshopServiceId Int                 @map("workshop_service_id")
+  technicianId      Int?                @map("technician_id")
+  slotDate          DateTime            @map("slot_date") @db.Date
+  startAt           DateTime            @map("start_at")
+  endAt             DateTime            @map("end_at")
+  capacity          Int                 @default(1)
+  bookedCount       Int                 @default(0) @map("booked_count")
+  status            BookingSlotStatus   @default(AVAILABLE)
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  organization      Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch            OrganizationBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  workshopService   WorkshopService     @relation(fields: [workshopServiceId], references: [id], onDelete: Cascade)
+  technician        WorkshopTechnician?  @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  bookings          WorkshopBooking[]
+
+  @@unique([workshopServiceId, branchId, startAt])
+  @@index([organizationId, branchId, slotDate, status])
+  @@index([workshopServiceId, slotDate, status])
+  @@map("booking_slots")
+}
+
+model WorkshopService {
+  id                       Int                    @id @default(autoincrement())
+  publicId                 String                 @unique @default(cuid())
+  organizationId           Int                    @map("organization_id")
+  branchId                 Int?                   @map("branch_id")
+  cityId                   Int?                   @map("city_id")
+  serviceId                Int?                   @map("service_id")
+  createdByUserId          Int                    @map("created_by_user_id")
+  nameAr                   String                 @map("name_ar") @db.VarChar(180)
+  nameEn                   String?                @map("name_en") @db.VarChar(180)
+  categoryCode             String                 @default("general") @map("category_code") @db.VarChar(60)
+  description              String?                @db.Text
+  estimatedDurationMinutes Int?                   @map("estimated_duration_minutes")
+  basePrice                Decimal?               @map("base_price") @db.Decimal(12, 2)
+  currency                 String                 @default("YER") @db.VarChar(3)
+  requiresDiagnosis        Boolean                @default(false) @map("requires_diagnosis")
+  supportsMobileService    Boolean                @default(false) @map("supports_mobile_service")
+  status                   WorkshopServiceStatus  @default(ACTIVE)
+  createdAt                DateTime               @default(now()) @map("created_at")
+  updatedAt                DateTime               @updatedAt @map("updated_at")
+  organization             Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch                   OrganizationBranch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  city                     City?                  @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  service                  ServiceCatalog?        @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  createdBy                User                   @relation("WorkshopServiceCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  bookingSlots             BookingSlot[]
+  bookings                 WorkshopBooking[]
+  serviceOrders            ServiceOrder[]
+  serviceReviews           ServiceReview[]
+
+  @@index([organizationId, status])
+  @@index([branchId])
+  @@index([cityId, status])
+  @@index([serviceId])
+  @@map("workshop_services")
+}
+
+model WorkshopTechnician {
+  id              Int                      @id @default(autoincrement())
+  publicId        String                   @unique @default(cuid())
+  organizationId  Int                      @map("organization_id")
+  branchId        Int?                     @map("branch_id")
+  userId          Int?                     @map("user_id")
+  fullName        String                   @map("full_name") @db.VarChar(140)
+  phone           String?                  @db.VarChar(20)
+  specializations Json?
+  status          WorkshopTechnicianStatus @default(ACTIVE)
+  maxJobsPerDay   Int?                     @map("max_jobs_per_day")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  organization    Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch          OrganizationBranch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  user            User?                    @relation("TechnicianUser", fields: [userId], references: [id], onDelete: SetNull)
+  bookingSlots    BookingSlot[]
+  bookings        WorkshopBooking[]
+  serviceOrders   ServiceOrder[]
+  diagnosticReports DiagnosticReport[]
+
+  @@index([organizationId, status])
+  @@index([branchId])
+  @@map("workshop_technicians")
+}
+
+model WorkshopBooking {
+  id                         Int                         @id @default(autoincrement())
+  publicId                   String                      @unique @default(cuid())
+  userId                     Int                         @map("user_id")
+  customerVehicleId          Int?                        @map("customer_vehicle_id")
+  organizationId             Int                         @map("organization_id")
+  branchId                   Int?                        @map("branch_id")
+  workshopServiceId          Int                         @map("workshop_service_id")
+  cityId                     Int?                        @map("city_id")
+  technicianId               Int?                        @map("technician_id")
+  bookingSlotId              Int?                        @map("booking_slot_id")
+  status                     WorkshopBookingStatus       @default(REQUESTED)
+  preferredDate              DateTime                    @map("preferred_date")
+  preferredTimeWindow        String?                     @map("preferred_time_window") @db.VarChar(60)
+  customerProblemDescription String?                     @map("customer_problem_description") @db.Text
+  customerNote               String?                     @map("customer_note") @db.VarChar(500)
+  workshopNote               String?                     @map("workshop_note") @db.VarChar(500)
+  estimatedAmount            Decimal?                    @map("estimated_amount") @db.Decimal(12, 2)
+  currency                   String                      @default("YER") @db.VarChar(3)
+  cancellationReason         String?                     @map("cancellation_reason") @db.VarChar(500)
+  cancelledAt                DateTime?                   @map("cancelled_at")
+  createdAt                  DateTime                    @default(now()) @map("created_at")
+  updatedAt                  DateTime                    @updatedAt @map("updated_at")
+  user                       User                        @relation("WorkshopBookingCustomer", fields: [userId], references: [id], onDelete: Restrict)
+  customerVehicle            CustomerVehicle?            @relation(fields: [customerVehicleId], references: [id], onDelete: SetNull)
+  organization               Organization                @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch                     OrganizationBranch?         @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  workshopService            WorkshopService             @relation(fields: [workshopServiceId], references: [id], onDelete: Restrict)
+  city                       City?                       @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  technician                 WorkshopTechnician?         @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  bookingSlot                BookingSlot?                @relation(fields: [bookingSlotId], references: [id], onDelete: SetNull)
+  serviceOrder               ServiceOrder?
+  statusHistory              WorkshopBookingStatusHistory[]
+
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@index([preferredDate])
+  @@index([bookingSlotId])
+  @@map("workshop_bookings")
+}
+
+model WorkshopBookingStatusHistory {
+  id              Int                   @id @default(autoincrement())
+  bookingId       Int                   @map("booking_id")
+  status          WorkshopBookingStatus
+  changedByUserId Int?                  @map("changed_by_user_id")
+  note            String?               @db.VarChar(500)
+  createdAt       DateTime              @default(now()) @map("created_at")
+  booking         WorkshopBooking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  changedBy       User?                 @relation("WorkshopBookingChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@map("workshop_booking_status_history")
+}
+
+model ServiceOrder {
+  id                         Int                         @id @default(autoincrement())
+  publicId                   String                      @unique @default(cuid())
+  serviceOrderNumber         String                      @unique @map("service_order_number") @db.VarChar(40)
+  userId                     Int                         @map("user_id")
+  customerVehicleId          Int?                        @map("customer_vehicle_id")
+  organizationId             Int                         @map("organization_id")
+  branchId                   Int?                        @map("branch_id")
+  bookingId                  Int?                        @unique @map("booking_id")
+  workshopServiceId          Int?                        @map("workshop_service_id")
+  technicianId               Int?                        @map("technician_id")
+  status                     ServiceOrderStatus          @default(OPEN)
+  priority                   ServiceOrderPriority        @default(NORMAL)
+  problemDescription         String?                     @map("problem_description") @db.Text
+  diagnosisSummary           String?                     @map("diagnosis_summary") @db.Text
+  workSummary                String?                     @map("work_summary") @db.Text
+  estimatedAmount            Decimal?                    @map("estimated_amount") @db.Decimal(12, 2)
+  approvedAmount             Decimal?                    @map("approved_amount") @db.Decimal(12, 2)
+  finalAmount                Decimal?                    @map("final_amount") @db.Decimal(12, 2)
+  currency                   String                      @default("YER") @db.VarChar(3)
+  customerApprovalRequired   Boolean                     @default(false) @map("customer_approval_required")
+  customerApprovedAt         DateTime?                   @map("customer_approved_at")
+  startedAt                  DateTime?                   @map("started_at")
+  completedAt                DateTime?                   @map("completed_at")
+  createdAt                  DateTime                    @default(now()) @map("created_at")
+  updatedAt                  DateTime                    @updatedAt @map("updated_at")
+  user                       User                        @relation("ServiceOrderCustomer", fields: [userId], references: [id], onDelete: Restrict)
+  customerVehicle            CustomerVehicle?            @relation(fields: [customerVehicleId], references: [id], onDelete: SetNull)
+  organization               Organization                @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch                     OrganizationBranch?         @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  booking                    WorkshopBooking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  workshopService            WorkshopService?            @relation(fields: [workshopServiceId], references: [id], onDelete: SetNull)
+  technician                 WorkshopTechnician?         @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  statusHistory              ServiceOrderStatusHistory[]
+  diagnosticReports          DiagnosticReport[]
+  maintenanceRecords         MaintenanceRecord[]
+  paymentTransactions        PaymentTransaction[]
+  invoices                   Invoice[]
+  refundRequests             RefundRequest[]
+  supportTickets             SupportTicket[]
+  complaints                 Complaint[]
+  workshopReviews            WorkshopReview[]
+  serviceReviews             ServiceReview[]
+  walletLedgerEntries        WalletLedgerEntry[]
+  loyaltyPointTransactions   LoyaltyPointTransaction[]
+  couponRedemptions          CouponRedemption[]
+  referralRewards           ReferralReward[]
+
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@index([serviceOrderNumber])
+  @@map("workshop_service_orders")
+}
+
+model ServiceOrderStatusHistory {
+  id              Int                @id @default(autoincrement())
+  serviceOrderId  Int                @map("service_order_id")
+  status          ServiceOrderStatus
+  changedByUserId Int?               @map("changed_by_user_id")
+  note            String?            @db.VarChar(500)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  serviceOrder    ServiceOrder       @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  changedBy       User?              @relation("ServiceOrderChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([serviceOrderId])
+  @@map("workshop_service_order_status_history")
+}
+
+model DiagnosticReport {
+  id                     Int                 @id @default(autoincrement())
+  publicId               String              @unique @default(cuid())
+  serviceOrderId         Int                 @map("service_order_id")
+  technicianId           Int?                @map("technician_id")
+  symptoms               String?             @db.Text
+  findings               String              @db.Text
+  recommendedActions     String?             @map("recommended_actions") @db.Text
+  estimatedRepairCost    Decimal?            @map("estimated_repair_cost") @db.Decimal(12, 2)
+  requiresParts          Boolean             @default(false) @map("requires_parts")
+  createdAt              DateTime            @default(now()) @map("created_at")
+  updatedAt              DateTime            @updatedAt @map("updated_at")
+  serviceOrder           ServiceOrder        @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  technician             WorkshopTechnician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+
+  @@index([serviceOrderId])
+  @@map("workshop_diagnostic_reports")
+}
+
+model MaintenanceRecord {
+  id                Int              @id @default(autoincrement())
+  publicId          String           @unique @default(cuid())
+  userId            Int              @map("user_id")
+  customerVehicleId Int              @map("customer_vehicle_id")
+  organizationId    Int?             @map("organization_id")
+  serviceOrderId    Int?             @map("service_order_id")
+  title             String           @db.VarChar(180)
+  description       String?          @db.Text
+  mileage           Int?
+  serviceDate       DateTime         @map("service_date")
+  nextServiceDate   DateTime?        @map("next_service_date")
+  costAmount        Decimal?         @map("cost_amount") @db.Decimal(12, 2)
+  currency          String           @default("YER") @db.VarChar(3)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  user              User             @relation("MaintenanceRecordCustomer", fields: [userId], references: [id], onDelete: Restrict)
+  customerVehicle   CustomerVehicle  @relation(fields: [customerVehicleId], references: [id], onDelete: Cascade)
+  organization      Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  serviceOrder      ServiceOrder?    @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, serviceDate])
+  @@index([customerVehicleId, serviceDate])
+  @@map("vehicle_maintenance_records")
+}
+
+model CatalogCategory {
+  id          Int               @id @default(autoincrement())
+  publicId    String            @unique @default(cuid())
+  parentId    Int?              @map("parent_id")
+  nameAr      String            @map("name_ar") @db.VarChar(160)
+  nameEn      String?           @map("name_en") @db.VarChar(160)
+  slug        String            @unique @db.VarChar(180)
+  description String?           @db.Text
+  iconUrl     String?           @map("icon_url") @db.VarChar(500)
+  sortOrder   Int               @default(0) @map("sort_order")
+  isActive    Boolean           @default(true) @map("is_active")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  parent      CatalogCategory?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    CatalogCategory[] @relation("CategoryTree")
+  products    CatalogProduct[]
+
+  @@index([parentId])
+  @@map("catalog_categories")
+}
+
+model PartBrand {
+  id          Int              @id @default(autoincrement())
+  publicId    String           @unique @default(cuid())
+  nameAr      String           @map("name_ar") @db.VarChar(160)
+  nameEn      String?          @map("name_en") @db.VarChar(160)
+  slug        String           @unique @db.VarChar(180)
+  countryCode String?          @map("country_code") @db.VarChar(3)
+  logoUrl     String?          @map("logo_url") @db.VarChar(500)
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  products    CatalogProduct[]
+
+  @@map("catalog_part_brands")
+}
+
+model CatalogProduct {
+  id              Int                    @id @default(autoincrement())
+  publicId        String                 @unique @default(cuid())
+  categoryId      Int                    @map("category_id")
+  partBrandId     Int?                   @map("part_brand_id")
+  nameAr          String                 @map("name_ar") @db.VarChar(220)
+  nameEn          String?                @map("name_en") @db.VarChar(220)
+  slug            String                 @unique @db.VarChar(240)
+  sku             String?                @unique @db.VarChar(80)
+  oemNumber       String?                @map("oem_number") @db.VarChar(100)
+  aftermarketCode String?                @map("aftermarket_code") @db.VarChar(100)
+  description     String?                @db.Text
+  specifications  Json?
+  isUniversal     Boolean                @default(false) @map("is_universal")
+  isActive        Boolean                @default(true) @map("is_active")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  category        CatalogCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  partBrand       PartBrand?             @relation(fields: [partBrandId], references: [id], onDelete: SetNull)
+  media           ProductMedia[]
+  specs           ProductSpec[]
+  compatibilities ProductCompatibility[]
+  listings        Listing[]
+  productReviews  ProductReview[]
+  importRows      ProductImportRow[]
+
+  @@index([categoryId])
+  @@index([partBrandId])
+  @@index([nameAr])
+  @@map("catalog_products")
+}
+
+model ProductSpec {
+  id        Int            @id @default(autoincrement())
+  productId Int            @map("product_id")
+  specKey   String         @map("spec_key") @db.VarChar(120)
+  specValue String         @map("spec_value") @db.VarChar(255)
+  sortOrder Int            @default(0) @map("sort_order")
+  createdAt DateTime       @default(now()) @map("created_at")
+  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("catalog_product_specs")
+}
+
+model ProductMedia {
+  id        Int            @id @default(autoincrement())
+  productId Int            @map("product_id")
+  mediaUrl  String         @map("media_url") @db.VarChar(500)
+  mediaType String         @default("image") @map("media_type") @db.VarChar(30)
+  altText   String?        @map("alt_text") @db.VarChar(160)
+  sortOrder Int            @default(0) @map("sort_order")
+  createdAt DateTime       @default(now()) @map("created_at")
+  product   CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("catalog_product_media")
+}
+
+model ProductCompatibility {
+  id           Int             @id @default(autoincrement())
+  productId    Int             @map("product_id")
+  makeId       Int             @map("make_id")
+  modelId      Int?            @map("model_id")
+  variantId    Int?            @map("variant_id")
+  yearFrom     Int?            @map("year_from")
+  yearTo       Int?            @map("year_to")
+  engineCode   String?         @map("engine_code") @db.VarChar(80)
+  notes        String?         @db.VarChar(255)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  product      CatalogProduct  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  make         VehicleMake     @relation(fields: [makeId], references: [id], onDelete: Restrict)
+  model        VehicleModel?   @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  variant      VehicleVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([makeId, modelId, variantId])
+  @@map("catalog_product_compatibilities")
+}
+
+model Listing {
+  id                  Int                   @id @default(autoincrement())
+  publicId            String                @unique @default(cuid())
+  productId           Int                   @map("product_id")
+  organizationId      Int                   @map("organization_id")
+  branchId            Int?                  @map("branch_id")
+  cityId              Int?                  @map("city_id")
+  createdByUserId     Int                   @map("created_by_user_id")
+  title               String                @db.VarChar(240)
+  description         String?               @db.Text
+  condition           ProductCondition      @default(NEW)
+  qualityType         String                @default("AFTERMARKET") @map("quality_type") @db.VarChar(30)
+  status              ListingStatus         @default(DRAFT)
+  approvalStatus      ListingApprovalStatus @default(APPROVED) @map("approval_status")
+  unitPrice           Decimal               @map("unit_price") @db.Decimal(12, 2)
+  salePrice           Decimal?              @map("sale_price") @db.Decimal(12, 2)
+  currency            String                @default("YER") @db.VarChar(3)
+  availableQuantity   Int                   @default(0) @map("available_quantity")
+  reservedQuantity    Int                   @default(0) @map("reserved_quantity")
+  minOrderQuantity    Int                   @default(1) @map("min_order_quantity")
+  warrantyDays        Int?                  @map("warranty_days")
+  supportsPickup      Boolean               @default(true) @map("supports_pickup")
+  supportsDelivery    Boolean               @default(false) @map("supports_delivery")
+  publishedAt         DateTime?             @map("published_at")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  product             CatalogProduct        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch              OrganizationBranch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  city                City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  createdBy           User                  @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  inventory           ListingInventory?
+  prices              ListingPrice[]
+  stockMovements      StockMovement[]
+  cartItems           CartItem[]
+  orderItems          OrderItem[]
+  importRows          ProductImportRow[]
+
+  @@index([productId])
+  @@index([organizationId])
+  @@index([status, approvalStatus])
+  @@index([cityId])
+  @@map("market_listings")
+}
+
+model ListingInventory {
+  id                Int      @id @default(autoincrement())
+  listingId         Int      @unique @map("listing_id")
+  availableQuantity Int      @default(0) @map("available_quantity")
+  reservedQuantity  Int      @default(0) @map("reserved_quantity")
+  lowStockThreshold Int?     @map("low_stock_threshold")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_inventory")
+}
+
+model ListingPrice {
+  id        Int      @id @default(autoincrement())
+  listingId Int      @map("listing_id")
+  unitPrice Decimal  @map("unit_price") @db.Decimal(12, 2)
+  salePrice Decimal? @map("sale_price") @db.Decimal(12, 2)
+  currency  String   @default("YER") @db.VarChar(3)
+  startsAt  DateTime? @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, isActive])
+  @@map("listing_prices")
+}
+
+model StockMovement {
+  id             Int      @id @default(autoincrement())
+  listingId      Int      @map("listing_id")
+  movementType   String   @map("movement_type") @db.VarChar(40)
+  quantity       Int
+  quantityBefore Int?     @map("quantity_before")
+  quantityAfter  Int?     @map("quantity_after")
+  reason         String?  @db.VarChar(255)
+  referenceType  String?  @map("reference_type") @db.VarChar(80)
+  referenceId    String?  @map("reference_id") @db.VarChar(120)
+  createdByUserId Int?    @map("created_by_user_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  listing         Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, createdAt])
+  @@map("stock_movements")
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  publicId  String     @unique @default(cuid())
+  userId    Int        @map("user_id")
+  status    CartStatus @default(ACTIVE)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+
+  @@index([userId, status])
+  @@map("commerce_carts")
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cartId    Int      @map("cart_id")
+  listingId Int      @map("listing_id")
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, listingId])
+  @@map("commerce_cart_items")
+}
+
+model Order {
+  id                Int                   @id @default(autoincrement())
+  publicId          String                @unique @default(cuid())
+  orderNumber       String                @unique @map("order_number") @db.VarChar(40)
+  userId            Int                   @map("user_id")
+  organizationId    Int                   @map("organization_id")
+  branchId          Int?                  @map("branch_id")
+  cityId            Int?                  @map("city_id")
+  status            OrderStatus           @default(PENDING)
+  fulfillmentMethod FulfillmentMethod     @default(PICKUP) @map("fulfillment_method")
+  paymentMethod     PaymentMethod         @default(CASH_ON_PICKUP) @map("payment_method")
+  paymentStatus     PaymentStatus         @default(UNPAID) @map("payment_status")
+  subtotalAmount    Decimal               @default(0) @map("subtotal_amount") @db.Decimal(12, 2)
+  deliveryFee       Decimal               @default(0) @map("delivery_fee") @db.Decimal(12, 2)
+  discountAmount    Decimal               @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount       Decimal               @default(0) @map("total_amount") @db.Decimal(12, 2)
+  currency          String                @default("YER") @db.VarChar(3)
+  customerNote      String?               @map("customer_note") @db.VarChar(500)
+  cancellationReason String?              @map("cancellation_reason") @db.VarChar(500)
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch            OrganizationBranch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  city              City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
+  statusHistory     OrderStatusHistory[]
+  invoices          Invoice[]
+  fees              OrderFee[]
+  paymentTransactions PaymentTransaction[]
+  refundRequests    RefundRequest[]
+  shipment          Shipment?
+  supportTickets    SupportTicket[]
+  complaints        Complaint[]
+  productReviews    ProductReview[]
+  merchantReviews   MerchantReview[]
+  walletLedgerEntries WalletLedgerEntry[]
+  loyaltyPointTransactions LoyaltyPointTransaction[]
+  couponRedemptions CouponRedemption[]
+  referralRelationships ReferralRelationship[]
+  referralRewards ReferralReward[]
+  journalEntryLines JournalEntryLine[]
+  financialTransactions FinancialTransaction[]
+
+  @@index([userId])
+  @@index([organizationId, status])
+  @@index([orderNumber])
+  @@map("commerce_orders")
+}
+
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  orderId      Int      @map("order_id")
+  listingId    Int      @map("listing_id")
+  productName  String   @map("product_name") @db.VarChar(240)
+  unitPrice    Decimal  @map("unit_price") @db.Decimal(12, 2)
+  quantity     Int
+  totalAmount  Decimal  @map("total_amount") @db.Decimal(12, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Restrict)
+
+  @@map("commerce_order_items")
+}
+
+model OrderStatusHistory {
+  id              Int         @id @default(autoincrement())
+  orderId         Int         @map("order_id")
+  status          OrderStatus
+  changedByUserId Int?        @map("changed_by_user_id")
+  note            String?     @db.VarChar(500)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  order           Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy       User?       @relation(fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("commerce_order_status_history")
+}
+
+enum InvoiceType {
+  ORDER
+  SERVICE_ORDER
+  MANUAL
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model Invoice {
+  id             Int           @id @default(autoincrement())
+  publicId       String        @unique @default(cuid()) @map("public_id")
+  invoiceType    InvoiceType   @default(ORDER) @map("invoice_type")
+  orderId        Int?          @map("order_id")
+  serviceOrderId Int?          @map("service_order_id")
+  customerId     Int?          @map("customer_id")
+  invoiceNumber  String        @unique @map("invoice_number") @db.VarChar(60)
+  subtotalAmount Decimal       @default(0) @map("subtotal_amount") @db.Decimal(12, 2)
+  deliveryFee    Decimal       @default(0) @map("delivery_fee") @db.Decimal(12, 2)
+  discountAmount Decimal       @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount    Decimal       @default(0) @map("total_amount") @db.Decimal(12, 2)
+  currency       String        @default("YER") @db.VarChar(3)
+  status         InvoiceStatus @default(ISSUED)
+  issuedAt       DateTime      @default(now()) @map("issued_at")
+  paidAt         DateTime?     @map("paid_at")
+  cancelledAt    DateTime?     @map("cancelled_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  customer       User?         @relation("InvoiceCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  payments       PaymentTransaction[]
+  refunds        RefundRequest[]
+  journalEntryLines JournalEntryLine[]
+  financialTransactions FinancialTransaction[]
+
+  @@index([orderId])
+  @@index([serviceOrderId])
+  @@index([customerId, status])
+  @@index([status, issuedAt])
+  @@map("commerce_invoices")
+}
+
+model OrderFee {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  feeType   String   @map("fee_type") @db.VarChar(40)
+  label     String   @db.VarChar(120)
+  amount    Decimal  @default(0) @db.Decimal(12, 2)
+  currency  String   @default("YER") @db.VarChar(3)
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("commerce_order_fees")
+}
+
+
+enum PaymentTransactionType {
+  ORDER_PAYMENT
+  SERVICE_ORDER_PAYMENT
+  REFUND
+  ADJUSTMENT
+}
+
+enum PaymentProvider {
+  MANUAL
+  CASH
+  BANK_TRANSFER
+  WALLET
+  LOCAL_WALLET
+  EXTERNAL
+  PAYMENT_GATEWAY
+}
+
+enum PaymentTransactionStatus {
+  INITIATED
+  PENDING_COD
+  WAITING_PROOF
+  PENDING_REVIEW
+  UNDER_REVIEW
+  AUTHORIZED
+  CONFIRMED
+  PAID
+  REJECTED
+  FAILED
+  CANCELLED
+  EXPIRED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum DeliveryMethodStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum DeliveryMethodKind {
+  STORE_PICKUP
+  DRIVER_DELIVERY
+  LOCAL_SHIPPING_COMPANY
+}
+
+enum DeliveryFeeScope {
+  CITY
+  BRANCH
+  METHOD
+}
+
+enum DriverType {
+  INTERNAL
+  EXTERNAL
+}
+
+enum DriverStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum LocalShippingCompanyStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ShipmentStatus {
+  PENDING
+  READY_FOR_PICKUP
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  CANCELLED
+  RETURNED
+}
+
+enum DevicePlatform {
+  ANDROID
+  IOS
+  WEB
+  WINDOWS
+  MACOS
+  LINUX
+  UNKNOWN
+}
+
+enum NotificationChannel {
+  IN_APP
+  FCM
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum PaymentMethodConfigStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentMethodKind {
+  COD
+  BANK_TRANSFER
+  LOCAL_WALLET
+  PAYMENT_GATEWAY
+}
+
+enum PaymentAttemptStatus {
+  CREATED
+  SENT_TO_PROVIDER
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentProofStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum PaymentWebhookStatus {
+  RECEIVED
+  VERIFIED
+  REJECTED
+  PROCESSED
+  FAILED
+}
+
+enum RefundStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PROCESSING
+  REFUNDED
+  FAILED
+}
+
+enum SettlementStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model PaymentMethodConfig {
+  id              Int                       @id @default(autoincrement())
+  publicId        String                    @unique @default(cuid())
+  code            String                    @unique @db.VarChar(60)
+  nameAr          String                    @map("name_ar") @db.VarChar(140)
+  nameEn          String?                   @map("name_en") @db.VarChar(140)
+  kind            PaymentMethodKind
+  providerCode    String?                   @map("provider_code") @db.VarChar(80)
+  instructionsAr  String?                   @map("instructions_ar") @db.Text
+  instructionsEn  String?                   @map("instructions_en") @db.Text
+  requiresProof   Boolean                   @default(false) @map("requires_proof")
+  requiresWebhook Boolean                   @default(false) @map("requires_webhook")
+  allowForOrders  Boolean                   @default(true) @map("allow_for_orders")
+  allowForServices Boolean                  @default(true) @map("allow_for_services")
+  status          PaymentMethodConfigStatus @default(ACTIVE)
+  sortOrder       Int                       @default(0) @map("sort_order")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  payments        PaymentTransaction[]
+
+  @@index([kind, status])
+  @@map("payment_methods")
+}
+
+model PaymentTransaction {
+  id                    Int                       @id @default(autoincrement())
+  publicId              String                    @unique @default(cuid())
+  invoiceId             Int?                      @map("invoice_id")
+  orderId               Int?                      @map("order_id")
+  serviceOrderId        Int?                      @map("service_order_id")
+  payerUserId           Int?                      @map("payer_user_id")
+  organizationId        Int?                      @map("organization_id")
+  paymentMethodConfigId Int?                      @map("payment_method_config_id")
+  type                  PaymentTransactionType    @default(ORDER_PAYMENT)
+  provider              PaymentProvider           @default(MANUAL)
+  method                PaymentMethod?            @map("payment_method")
+  status                PaymentTransactionStatus  @default(INITIATED)
+  amount                Decimal                   @db.Decimal(12, 2)
+  currency              String                    @default("YER") @db.VarChar(3)
+  internalReference     String                    @unique @default(cuid()) @map("internal_reference") @db.VarChar(80)
+  externalReference     String?                   @map("external_reference") @db.VarChar(120)
+  idempotencyKey        String?                   @unique @map("idempotency_key") @db.VarChar(120)
+  receiptUrl            String?                   @map("receipt_url") @db.VarChar(500)
+  reviewNote            String?                   @map("review_note") @db.VarChar(500)
+  meta                  Json?                     @map("metadata_json")
+  paidAt                DateTime?                 @map("paid_at")
+  failedAt              DateTime?                 @map("failed_at")
+  reviewedAt            DateTime?                 @map("reviewed_at")
+  expiresAt             DateTime?                 @map("expires_at")
+  approvedByUserId      Int?                      @map("approved_by_user_id")
+  createdAt             DateTime                  @default(now()) @map("created_at")
+  updatedAt             DateTime                  @updatedAt @map("updated_at")
+  invoice               Invoice?                  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  order                 Order?                    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder          ServiceOrder?             @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  payer                 User?                     @relation("PaymentTransactionUser", fields: [payerUserId], references: [id], onDelete: SetNull)
+  approvedBy            User?                     @relation("PaymentApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  organization          Organization?             @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  methodConfig          PaymentMethodConfig?      @relation(fields: [paymentMethodConfigId], references: [id], onDelete: SetNull)
+  attempts              PaymentAttempt[]
+  proofs                PaymentProof[]
+  refunds               RefundRequest[]
+  journalEntryLines     JournalEntryLine[]
+  financialTransactions FinancialTransaction[]
+  supportTickets        SupportTicket[] @relation("SupportTicketPayment")
+  complaints            Complaint[] @relation("ComplaintPayment")
+
+  @@index([invoiceId, status])
+  @@index([orderId, status])
+  @@index([serviceOrderId, status])
+  @@index([payerUserId, status])
+  @@index([organizationId, status])
+  @@index([provider, externalReference])
+  @@map("payment_transactions")
+}
+
+model PaymentAttempt {
+  id                 Int                  @id @default(autoincrement())
+  publicId           String               @unique @default(cuid())
+  paymentId          Int                  @map("payment_id")
+  attemptNumber      Int                  @default(1) @map("attempt_number")
+  provider           PaymentProvider      @default(MANUAL)
+  status             PaymentAttemptStatus @default(CREATED)
+  providerReference  String?              @map("provider_reference") @db.VarChar(140)
+  requestPayload     Json?                @map("request_payload")
+  responsePayload    Json?                @map("response_payload")
+  errorMessage       String?              @map("error_message") @db.VarChar(500)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  payment            PaymentTransaction   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentId, attemptNumber])
+  @@index([provider, providerReference])
+  @@index([status, createdAt])
+  @@map("payment_attempts")
+}
+
+model PaymentProof {
+  id               Int                @id @default(autoincrement())
+  publicId         String             @unique @default(cuid())
+  paymentId        Int                @map("payment_id")
+  uploadedByUserId Int                @map("uploaded_by_user_id")
+  fileUrl          String             @map("file_url") @db.VarChar(500)
+  fileName         String?            @map("file_name") @db.VarChar(255)
+  fileType         String?            @map("file_type") @db.VarChar(80)
+  amount           Decimal?           @db.Decimal(12, 2)
+  referenceNumber  String?            @map("reference_number") @db.VarChar(120)
+  status           PaymentProofStatus @default(PENDING_REVIEW)
+  reviewedByUserId Int?               @map("reviewed_by_user_id")
+  reviewNotes      String?            @map("review_notes") @db.VarChar(500)
+  reviewedAt       DateTime?          @map("reviewed_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  payment          PaymentTransaction @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  uploadedBy       User               @relation("PaymentProofUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+  reviewedBy       User?              @relation("PaymentProofReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId, status])
+  @@index([uploadedByUserId, createdAt])
+  @@index([status, createdAt])
+  @@map("payment_proofs")
+}
+
+model PaymentWebhook {
+  id                Int                  @id @default(autoincrement())
+  publicId          String               @unique @default(cuid())
+  providerCode      String               @map("provider_code") @db.VarChar(80)
+  eventType         String               @map("event_type") @db.VarChar(100)
+  providerReference String?              @map("provider_reference") @db.VarChar(140)
+  idempotencyKey    String               @unique @map("idempotency_key") @db.VarChar(180)
+  signature         String?              @db.VarChar(500)
+  payload           Json
+  isVerified        Boolean              @default(false) @map("is_verified")
+  status            PaymentWebhookStatus @default(RECEIVED)
+  errorMessage      String?              @map("error_message") @db.VarChar(500)
+  processedAt       DateTime?            @map("processed_at")
+  createdAt         DateTime             @default(now()) @map("created_at")
+
+  @@index([providerCode, providerReference])
+  @@index([status, createdAt])
+  @@map("payment_webhooks")
+}
+
+model RefundRequest {
+  id                Int                 @id @default(autoincrement())
+  publicId          String              @unique @default(cuid())
+  refundNumber      String              @unique @map("refund_number") @db.VarChar(60)
+  paymentId         Int?                @map("payment_id")
+  invoiceId         Int?                @map("invoice_id")
+  orderId           Int?                @map("order_id")
+  serviceOrderId    Int?                @map("service_order_id")
+  amount            Decimal             @db.Decimal(12, 2)
+  currency          String              @default("YER") @db.VarChar(3)
+  reason            String              @db.VarChar(500)
+  status            RefundStatus        @default(REQUESTED)
+  requestedByUserId Int                 @map("requested_by_user_id")
+  approvedByUserId  Int?                @map("approved_by_user_id")
+  providerReference String?             @map("provider_reference") @db.VarChar(140)
+  processedAt       DateTime?           @map("processed_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  payment           PaymentTransaction? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  invoice           Invoice?            @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  order             Order?              @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder      ServiceOrder?       @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  requestedBy       User                @relation("RefundRequestedBy", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  approvedBy        User?               @relation("RefundApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  journalEntryLines JournalEntryLine[]
+  financialTransactions FinancialTransaction[]
+  refundEntries     RefundEntry[]
+
+  @@index([paymentId, status])
+  @@index([orderId, status])
+  @@index([serviceOrderId, status])
+  @@index([status, createdAt])
+  @@map("refunds")
+}
+
+model Settlement {
+  id                Int              @id @default(autoincrement())
+  publicId          String           @unique @default(cuid())
+  settlementNumber  String           @unique @map("settlement_number") @db.VarChar(60)
+  organizationId    Int              @map("organization_id")
+  amount            Decimal          @db.Decimal(12, 2)
+  currency          String           @default("YER") @db.VarChar(3)
+  periodStart       DateTime         @map("period_start") @db.Date
+  periodEnd         DateTime         @map("period_end") @db.Date
+  status            SettlementStatus @default(PENDING)
+  notes             String?          @db.VarChar(500)
+  approvedByUserId  Int?             @map("approved_by_user_id")
+  paidAt            DateTime?        @map("paid_at")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  organization      Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  approvedBy        User?            @relation("SettlementApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  journalEntryLines JournalEntryLine[]
+  financialTransactions FinancialTransaction[]
+
+  @@index([organizationId, status])
+  @@index([status, periodStart, periodEnd])
+  @@map("settlements")
+}
+
+
+enum LedgerAccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum LedgerNormalBalance {
+  DEBIT
+  CREDIT
+}
+
+enum JournalEntryStatus {
+  POSTED
+  REVERSED
+}
+
+enum FinancialSourceType {
+  ORDER_CONFIRMED
+  PAYMENT_CONFIRMED
+  COD_DELIVERED
+  REFUND_COMPLETED
+  SETTLEMENT_PAID
+  WALLET_CREDIT
+  WALLET_DEBIT
+  MANUAL
+}
+
+enum FinancialTransactionDirection {
+  INFLOW
+  OUTFLOW
+  INTERNAL
+}
+
+enum FinancialTransactionStatus {
+  POSTED
+  REVERSED
+}
+
+model LedgerAccount {
+  id             Int                 @id @default(autoincrement())
+  publicId       String              @unique @default(cuid())
+  code           String              @unique @db.VarChar(40)
+  nameAr         String              @map("name_ar") @db.VarChar(160)
+  nameEn         String?             @map("name_en") @db.VarChar(160)
+  accountType    LedgerAccountType   @map("account_type")
+  normalBalance  LedgerNormalBalance @map("normal_balance")
+  parentId       Int?                @map("parent_id")
+  organizationId Int?                @map("organization_id")
+  currency       String?             @db.VarChar(3)
+  isSystem       Boolean             @default(true) @map("is_system")
+  isActive       Boolean             @default(true) @map("is_active")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  parent         LedgerAccount?      @relation("LedgerAccountHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children       LedgerAccount[]     @relation("LedgerAccountHierarchy")
+  organization   Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  lines          JournalEntryLine[]
+
+  @@index([accountType, isActive])
+  @@index([organizationId])
+  @@map("ledger_accounts")
+}
+
+model JournalEntry {
+  id              Int                 @id @default(autoincrement())
+  publicId        String              @unique @default(cuid())
+  entryNumber     String              @unique @map("entry_number") @db.VarChar(60)
+  status          JournalEntryStatus  @default(POSTED)
+  entryDate       DateTime            @default(now()) @map("entry_date")
+  sourceType      FinancialSourceType @map("source_type")
+  sourceId        Int?                @map("source_id")
+  sourcePublicId  String?             @map("source_public_id") @db.VarChar(120)
+  idempotencyKey  String              @unique @map("idempotency_key") @db.VarChar(180)
+  description     String?             @db.VarChar(500)
+  currency        String              @default("YER") @db.VarChar(3)
+  totalDebit      Decimal             @default(0) @map("total_debit") @db.Decimal(14, 2)
+  totalCredit     Decimal             @default(0) @map("total_credit") @db.Decimal(14, 2)
+  postedByUserId  Int?                @map("posted_by_user_id")
+  postedAt        DateTime            @default(now()) @map("posted_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  postedBy        User?               @relation("JournalPostedBy", fields: [postedByUserId], references: [id], onDelete: SetNull)
+  lines           JournalEntryLine[]
+  financialTransactions FinancialTransaction[]
+  refundEntries   RefundEntry[]
+
+  @@index([sourceType, sourceId])
+  @@index([entryDate])
+  @@index([status, entryDate])
+  @@map("journal_entries")
+}
+
+model JournalEntryLine {
+  id             Int                @id @default(autoincrement())
+  entryId        Int                @map("entry_id")
+  accountId      Int                @map("account_id")
+  organizationId Int?               @map("organization_id")
+  orderId        Int?               @map("order_id")
+  invoiceId      Int?               @map("invoice_id")
+  paymentId      Int?               @map("payment_id")
+  refundId       Int?               @map("refund_id")
+  settlementId   Int?               @map("settlement_id")
+  debitAmount    Decimal            @default(0) @map("debit_amount") @db.Decimal(14, 2)
+  creditAmount   Decimal            @default(0) @map("credit_amount") @db.Decimal(14, 2)
+  memo           String?            @db.VarChar(500)
+  createdAt      DateTime           @default(now()) @map("created_at")
+  entry          JournalEntry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account        LedgerAccount      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  organization   Organization?      @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  order          Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  invoice        Invoice?           @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  payment        PaymentTransaction? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  refund         RefundRequest?     @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  settlement     Settlement?        @relation(fields: [settlementId], references: [id], onDelete: SetNull)
+
+  @@index([entryId])
+  @@index([accountId])
+  @@index([organizationId])
+  @@index([orderId])
+  @@index([invoiceId])
+  @@index([paymentId])
+  @@index([refundId])
+  @@index([settlementId])
+  @@map("journal_entry_lines")
+}
+
+model FinancialTransaction {
+  id                Int                         @id @default(autoincrement())
+  publicId          String                      @unique @default(cuid())
+  transactionNumber String                      @unique @map("transaction_number") @db.VarChar(60)
+  sourceType        FinancialSourceType         @map("source_type")
+  sourceId          Int?                        @map("source_id")
+  idempotencyKey    String                      @unique @map("idempotency_key") @db.VarChar(180)
+  direction         FinancialTransactionDirection
+  status            FinancialTransactionStatus  @default(POSTED)
+  amount            Decimal                     @db.Decimal(14, 2)
+  currency          String                      @default("YER") @db.VarChar(3)
+  journalEntryId    Int                         @map("journal_entry_id")
+  organizationId    Int?                        @map("organization_id")
+  customerId        Int?                        @map("customer_id")
+  orderId           Int?                        @map("order_id")
+  invoiceId         Int?                        @map("invoice_id")
+  paymentId         Int?                        @map("payment_id")
+  refundId          Int?                        @map("refund_id")
+  settlementId      Int?                        @map("settlement_id")
+  description       String?                     @db.VarChar(500)
+  createdAt         DateTime                    @default(now()) @map("created_at")
+  journalEntry      JournalEntry                @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+  organization      Organization?               @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  customer          User?                       @relation("FinancialTransactionCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  order             Order?                      @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  invoice           Invoice?                    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  payment           PaymentTransaction?         @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  refund            RefundRequest?              @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  settlement        Settlement?                 @relation(fields: [settlementId], references: [id], onDelete: SetNull)
+
+  @@index([sourceType, sourceId])
+  @@index([organizationId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([paymentId])
+  @@index([settlementId])
+  @@map("financial_transactions")
+}
+
+model MerchantBalance {
+  id               Int          @id @default(autoincrement())
+  publicId         String       @unique @default(cuid())
+  organizationId   Int          @unique @map("organization_id")
+  currency         String       @default("YER") @db.VarChar(3)
+  pendingBalance   Decimal      @default(0) @map("pending_balance") @db.Decimal(14, 2)
+  availableBalance Decimal      @default(0) @map("available_balance") @db.Decimal(14, 2)
+  settledBalance   Decimal      @default(0) @map("settled_balance") @db.Decimal(14, 2)
+  lifetimeGross    Decimal      @default(0) @map("lifetime_gross") @db.Decimal(14, 2)
+  lifetimeRefunded Decimal      @default(0) @map("lifetime_refunded") @db.Decimal(14, 2)
+  lifetimeSettled  Decimal      @default(0) @map("lifetime_settled") @db.Decimal(14, 2)
+  version          Int          @default(1)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([currency])
+  @@map("merchant_balances")
+}
+
+model RefundEntry {
+  id             Int            @id @default(autoincrement())
+  publicId       String         @unique @default(cuid())
+  refundId       Int            @map("refund_id")
+  journalEntryId Int            @map("journal_entry_id")
+  amount         Decimal        @db.Decimal(14, 2)
+  currency       String         @default("YER") @db.VarChar(3)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  refund         RefundRequest  @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  journalEntry   JournalEntry   @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+
+  @@unique([refundId, journalEntryId])
+  @@index([refundId])
+  @@map("refund_entries")
+}
+
+model DeliveryMethod {
+  id                     Int                  @id @default(autoincrement())
+  code                   String               @unique @db.VarChar(50)
+  nameAr                 String               @map("name_ar") @db.VarChar(120)
+  nameEn                 String?              @map("name_en") @db.VarChar(120)
+  kind                   DeliveryMethodKind   @default(DRIVER_DELIVERY) @map("method_kind")
+  description            String?              @db.VarChar(500)
+  baseFee                Decimal              @default(0) @map("base_fee") @db.Decimal(12, 2)
+  currency               String               @default("YER") @db.VarChar(3)
+  estimatedDurationText  String?              @map("estimated_duration_text") @db.VarChar(120)
+  supportsCashOnDelivery Boolean              @default(true) @map("supports_cash_on_delivery")
+  status                 DeliveryMethodStatus @default(ACTIVE)
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedAt              DateTime             @updatedAt @map("updated_at")
+  shipments              Shipment[]
+  deliveryFees           DeliveryFee[]
+
+  @@index([kind, status])
+  @@map("delivery_methods")
+}
+
+model Driver {
+  id                 Int                 @id @default(autoincrement())
+  publicId           String              @unique @default(cuid())
+  userId             Int?                @unique @map("user_id")
+  organizationId     Int?                @map("organization_id")
+  branchId           Int?                @map("branch_id")
+  fullName           String              @map("full_name") @db.VarChar(140)
+  phone              String?             @db.VarChar(30)
+  driverType         DriverType          @default(INTERNAL) @map("driver_type")
+  status             DriverStatus        @default(ACTIVE)
+  isAvailable        Boolean             @default(true) @map("is_available")
+  vehicleType        String?             @map("vehicle_type") @db.VarChar(80)
+  vehiclePlate       String?             @map("vehicle_plate") @db.VarChar(40)
+  currentCityId      Int?                @map("current_city_id")
+  completedShipments Int                 @default(0) @map("completed_shipments")
+  ratingAverage      Decimal             @default(0) @map("rating_average") @db.Decimal(3, 2)
+  createdByUserId    Int?                @map("created_by_user_id")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  user               User?               @relation("DriverUser", fields: [userId], references: [id], onDelete: SetNull)
+  organization       Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch             OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  currentCity        City?               @relation(fields: [currentCityId], references: [id], onDelete: SetNull)
+  shipments          Shipment[]          @relation("ShipmentDriver")
+  trackingEvents     ShipmentTrackingEvent[] @relation("ShipmentEventDriver")
+
+  @@index([organizationId, status, isAvailable])
+  @@index([branchId, status])
+  @@index([currentCityId, status])
+  @@map("delivery_drivers")
+}
+
+model LocalShippingCompany {
+  id                  Int                        @id @default(autoincrement())
+  publicId            String                     @unique @default(cuid())
+  organizationId      Int?                       @map("organization_id")
+  cityId              Int?                       @map("city_id")
+  code                String?                    @unique @db.VarChar(60)
+  nameAr              String                     @map("name_ar") @db.VarChar(160)
+  nameEn              String?                    @map("name_en") @db.VarChar(160)
+  phone               String?                    @db.VarChar(30)
+  trackingUrlTemplate String?                    @map("tracking_url_template") @db.VarChar(500)
+  integrationCode     String?                    @map("integration_code") @db.VarChar(80)
+  supportsCod         Boolean                    @default(false) @map("supports_cod")
+  status              LocalShippingCompanyStatus @default(ACTIVE)
+  createdByUserId     Int?                       @map("created_by_user_id")
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+  organization        Organization?              @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  city                City?                      @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  shipments           Shipment[]
+
+  @@index([organizationId, status])
+  @@index([cityId, status])
+  @@map("delivery_local_shipping_companies")
+}
+
+model DeliveryFee {
+  id               Int                 @id @default(autoincrement())
+  publicId         String              @unique @default(cuid())
+  scope            DeliveryFeeScope    @default(CITY)
+  organizationId   Int?                @map("organization_id")
+  branchId         Int?                @map("branch_id")
+  cityId           Int?                @map("city_id")
+  deliveryMethodId Int?                @map("delivery_method_id")
+  label            String?             @db.VarChar(140)
+  baseFee          Decimal             @default(0) @map("base_fee") @db.Decimal(12, 2)
+  minFee           Decimal?            @map("min_fee") @db.Decimal(12, 2)
+  maxFee           Decimal?            @map("max_fee") @db.Decimal(12, 2)
+  currency         String              @default("YER") @db.VarChar(3)
+  estimatedMinDays Int?                @map("estimated_min_days")
+  estimatedMaxDays Int?                @map("estimated_max_days")
+  isActive         Boolean             @default(true) @map("is_active")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  organization     Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch           OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  city             City?               @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  deliveryMethod   DeliveryMethod?     @relation(fields: [deliveryMethodId], references: [id], onDelete: SetNull)
+  shipments        Shipment[]
+
+  @@index([cityId, deliveryMethodId, isActive])
+  @@index([branchId, deliveryMethodId, isActive])
+  @@index([organizationId, isActive])
+  @@map("delivery_fees")
+}
+
+model Shipment {
+  id                  Int                     @id @default(autoincrement())
+  publicId            String                  @unique @default(cuid())
+  shipmentNumber      String                  @unique @map("shipment_number") @db.VarChar(40)
+  orderId             Int                     @unique @map("order_id")
+  organizationId      Int                     @map("organization_id")
+  branchId            Int?                    @map("branch_id")
+  cityId              Int?                    @map("city_id")
+  deliveryMethodId    Int?                    @map("delivery_method_id")
+  deliveryFeeId       Int?                    @map("delivery_fee_id")
+  driverId            Int?                    @map("driver_id")
+  shippingCompanyId   Int?                    @map("shipping_company_id")
+  createdByUserId     Int                     @map("created_by_user_id")
+  status              ShipmentStatus          @default(PENDING)
+  trackingNumber      String?                 @unique @map("tracking_number") @db.VarChar(80)
+  externalShipmentNumber String?              @map("external_shipment_number") @db.VarChar(120)
+  externalTrackingUrl String?                 @map("external_tracking_url") @db.VarChar(500)
+  courierName         String?                 @map("courier_name") @db.VarChar(120)
+  recipientName       String?                 @map("recipient_name") @db.VarChar(120)
+  recipientPhone      String?                 @map("recipient_phone") @db.VarChar(20)
+  deliveryAddress     String?                 @map("delivery_address") @db.VarChar(500)
+  deliveryFee         Decimal                 @default(0) @map("delivery_fee") @db.Decimal(12, 2)
+  currency            String                  @default("YER") @db.VarChar(3)
+  notes               String?                 @db.VarChar(500)
+  estimatedPickupAt   DateTime?               @map("estimated_pickup_at")
+  estimatedDeliveryAt DateTime?               @map("estimated_delivery_at")
+  assignedAt          DateTime?               @map("assigned_at")
+  acceptedAt          DateTime?               @map("accepted_at")
+  preparedAt          DateTime?               @map("prepared_at")
+  pickedUpAt          DateTime?               @map("picked_up_at")
+  deliveredAt         DateTime?               @map("delivered_at")
+  completedAt         DateTime?               @map("completed_at")
+  cancelledAt         DateTime?               @map("cancelled_at")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+  order               Order                   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  organization        Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch              OrganizationBranch?     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  city                City?                   @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  deliveryMethod      DeliveryMethod?         @relation(fields: [deliveryMethodId], references: [id], onDelete: SetNull)
+  deliveryFeeRule     DeliveryFee?            @relation(fields: [deliveryFeeId], references: [id], onDelete: SetNull)
+  driver              Driver?                 @relation("ShipmentDriver", fields: [driverId], references: [id], onDelete: SetNull)
+  shippingCompany     LocalShippingCompany?   @relation(fields: [shippingCompanyId], references: [id], onDelete: SetNull)
+  createdBy           User                    @relation("ShipmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  events              ShipmentTrackingEvent[]
+  supportTickets      SupportTicket[] @relation("SupportTicketShipment")
+  complaints          Complaint[] @relation("ComplaintShipment")
+
+  @@index([driverId, status])
+  @@index([shippingCompanyId, status])
+  @@index([organizationId, status])
+  @@index([cityId, status])
+  @@index([status])
+  @@map("delivery_shipments")
+}
+
+model ShipmentTrackingEvent {
+  id              Int             @id @default(autoincrement())
+  shipmentId      Int             @map("shipment_id")
+  status          ShipmentStatus
+  note            String?         @db.VarChar(500)
+  locationText    String?         @map("location_text") @db.VarChar(180)
+  driverId        Int?            @map("driver_id")
+  changedByUserId Int?            @map("changed_by_user_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  shipment        Shipment        @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  driver          Driver?         @relation("ShipmentEventDriver", fields: [driverId], references: [id], onDelete: SetNull)
+  changedBy       User?           @relation("ShipmentEventCreatedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([driverId, createdAt])
+  @@index([shipmentId])
+  @@map("delivery_shipment_tracking_events")
+}
+
+model UserDevice {
+  id          Int            @id @default(autoincrement())
+  publicId    String         @unique @default(cuid())
+  userId      Int            @map("user_id")
+  platform    DevicePlatform @default(UNKNOWN)
+  fcmToken    String         @unique @map("fcm_token") @db.VarChar(512)
+  deviceName  String?        @map("device_name") @db.VarChar(120)
+  appVersion  String?        @map("app_version") @db.VarChar(40)
+  isActive    Boolean        @default(true) @map("is_active")
+  lastSeenAt  DateTime       @default(now()) @map("last_seen_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@map("notification_user_devices")
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  publicId  String             @unique @default(cuid())
+  userId    Int                @map("user_id")
+  channel   NotificationChannel @default(IN_APP)
+  title     String             @db.VarChar(160)
+  body      String             @db.VarChar(500)
+  data      Json?
+  status    NotificationStatus @default(UNREAD)
+  readAt    DateTime?          @map("read_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id        Int      @id @default(autoincrement())
+  publicId  String   @unique @default(cuid())
+  eventKey  String   @map("event_key") @db.VarChar(80)
+  channel   String   @db.VarChar(20)
+  titleAr   String   @map("title_ar") @db.VarChar(160)
+  bodyAr    String   @map("body_ar") @db.VarChar(500)
+  titleEn   String?  @map("title_en") @db.VarChar(160)
+  bodyEn    String?  @map("body_en") @db.VarChar(500)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([eventKey, channel])
+  @@index([eventKey, isActive])
+  @@map("notification_templates")
+}
+
+model EmailNotificationLog {
+  id        Int       @id @default(autoincrement())
+  publicId  String    @unique @default(cuid())
+  userId    Int?      @map("user_id")
+  toEmail   String    @map("to_email") @db.VarChar(255)
+  subject   String    @db.VarChar(180)
+  body      String    @db.Text
+  status    String    @default("SENT") @db.VarChar(30)
+  provider  String    @default("console") @db.VarChar(40)
+  error     String?   @db.Text
+  metadata  Json?     @map("metadata_json")
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("email_notification_logs")
+}
+
+model PushNotificationLog {
+  id        Int       @id @default(autoincrement())
+  publicId  String    @unique @default(cuid())
+  userId    Int?      @map("user_id")
+  fcmToken  String?   @map("fcm_token") @db.VarChar(512)
+  title     String    @db.VarChar(160)
+  body      String    @db.VarChar(500)
+  status    String    @default("SENT") @db.VarChar(30)
+  provider  String    @default("firebase") @db.VarChar(40)
+  error     String?   @db.Text
+  metadata  Json?     @map("metadata_json")
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("push_notification_logs")
+}
+
+enum SupportTicketCategory {
+  GENERAL
+  ORDER
+  PAYMENT
+  DELIVERY
+  WORKSHOP
+  MERCHANT
+  TECHNICAL
+  COMPLAINT
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_SUPPORT
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+  ESCALATED
+}
+
+enum SupportTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SupportMessageType {
+  CUSTOMER_MESSAGE
+  SUPPORT_MESSAGE
+  MERCHANT_MESSAGE
+  SYSTEM_NOTE
+  INTERNAL_NOTE
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  INVESTIGATION
+  WAITING_CUSTOMER
+  WAITING_PROVIDER
+  RESOLVED
+  REJECTED
+  CLOSED
+}
+
+enum ComplaintSeverity {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum SupportContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum WhatsappSupportDepartment {
+  SALES
+  SUPPORT
+  COMPLAINTS
+  TECHNICAL
+  FINANCE
+  GENERAL
+}
+
+enum SupportAttachmentScope {
+  TICKET
+  MESSAGE
+  COMPLAINT
+}
+
+enum ReviewTargetType {
+  PRODUCT
+  MERCHANT
+  WORKSHOP
+  SERVICE
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+  REJECTED
+}
+
+enum ReviewModerationActionType {
+  REPORTED
+  HIDDEN
+  RESTORED
+  REJECTED
+}
+
+enum ReviewReplyStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+model SupportTicket {
+  id              Int                   @id @default(autoincrement())
+  publicId        String                @unique @default(cuid())
+  ticketNumber    String                @unique @map("ticket_number") @db.VarChar(40)
+  requesterUserId Int                   @map("requester_user_id")
+  assignedUserId  Int?                  @map("assigned_user_id")
+  organizationId  Int?                  @map("organization_id")
+  orderId         Int?                  @map("order_id")
+  serviceOrderId  Int?                  @map("service_order_id")
+  paymentId       Int?                  @map("payment_id")
+  shipmentId      Int?                  @map("shipment_id")
+  category        SupportTicketCategory @default(GENERAL)
+  status          SupportTicketStatus   @default(OPEN)
+  priority        SupportTicketPriority @default(NORMAL)
+  subject         String                @db.VarChar(180)
+  description     String                @db.Text
+  lastMessageAt   DateTime?             @map("last_message_at")
+  resolvedAt      DateTime?             @map("resolved_at")
+  closedAt        DateTime?             @map("closed_at")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  requester       User                  @relation("SupportTicketRequester", fields: [requesterUserId], references: [id], onDelete: Restrict)
+  assignedUser    User?                 @relation("SupportTicketAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  organization    Organization?         @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  order           Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder    ServiceOrder?         @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  payment         PaymentTransaction?   @relation("SupportTicketPayment", fields: [paymentId], references: [id], onDelete: SetNull)
+  shipment        Shipment?             @relation("SupportTicketShipment", fields: [shipmentId], references: [id], onDelete: SetNull)
+  messages        SupportTicketMessage[]
+  attachments     SupportTicketAttachment[]
+  complaint       Complaint?
+
+  @@index([requesterUserId, status])
+  @@index([organizationId, status])
+  @@index([paymentId, status])
+  @@index([shipmentId, status])
+  @@index([assignedUserId, status])
+  @@index([category, status])
+  @@index([ticketNumber])
+  @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id              Int                @id @default(autoincrement())
+  publicId        String             @unique @default(cuid())
+  ticketId        Int                @map("ticket_id")
+  authorUserId    Int?               @map("author_user_id")
+  messageType     SupportMessageType @default(CUSTOMER_MESSAGE) @map("message_type")
+  body            String             @db.Text
+  attachments     Json?
+  isInternal      Boolean            @default(false) @map("is_internal")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  ticket          SupportTicket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author          User?              @relation("SupportTicketMessageAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  attachmentRecords SupportTicketAttachment[]
+
+  @@index([ticketId, createdAt])
+  @@index([authorUserId])
+  @@map("support_ticket_messages")
+}
+
+model Complaint {
+  id              Int               @id @default(autoincrement())
+  publicId        String            @unique @default(cuid())
+  complaintNumber String            @unique @map("complaint_number") @db.VarChar(40)
+  requesterUserId Int               @map("requester_user_id")
+  organizationId  Int?              @map("organization_id")
+  orderId         Int?              @map("order_id")
+  serviceOrderId  Int?              @map("service_order_id")
+  paymentId       Int?              @map("payment_id")
+  shipmentId      Int?              @map("shipment_id")
+  ticketId        Int?              @unique @map("ticket_id")
+  status          ComplaintStatus   @default(SUBMITTED)
+  severity        ComplaintSeverity @default(NORMAL)
+  subject         String            @db.VarChar(180)
+  description     String            @db.Text
+  resolutionNote  String?           @map("resolution_note") @db.Text
+  resolvedByUserId Int?             @map("resolved_by_user_id")
+  resolvedAt      DateTime?         @map("resolved_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  requester       User              @relation("ComplaintRequester", fields: [requesterUserId], references: [id], onDelete: Restrict)
+  organization    Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  order           Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder    ServiceOrder?     @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  payment         PaymentTransaction? @relation("ComplaintPayment", fields: [paymentId], references: [id], onDelete: SetNull)
+  shipment        Shipment?         @relation("ComplaintShipment", fields: [shipmentId], references: [id], onDelete: SetNull)
+  ticket          SupportTicket?    @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  resolvedBy      User?             @relation("ComplaintResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([requesterUserId, status])
+  @@index([organizationId, status])
+  @@index([paymentId, status])
+  @@index([shipmentId, status])
+  @@index([severity, status])
+  @@map("support_complaints")
+}
+
+model SupportTicketAttachment {
+  id              Int                    @id @default(autoincrement())
+  publicId        String                 @unique @default(cuid())
+  ticketId        Int                    @map("ticket_id")
+  messageId       Int?                   @map("message_id")
+  uploadedByUserId Int?                  @map("uploaded_by_user_id")
+  scope           SupportAttachmentScope @default(MESSAGE)
+  fileUrl         String                 @map("file_url") @db.VarChar(500)
+  fileName        String?                @map("file_name") @db.VarChar(255)
+  fileType        String?                @map("file_type") @db.VarChar(80)
+  fileSizeBytes   Int?                   @map("file_size_bytes")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  ticket          SupportTicket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  message         SupportTicketMessage?  @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  uploadedBy      User?                  @relation("SupportAttachmentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@index([messageId])
+  @@index([uploadedByUserId, createdAt])
+  @@map("support_ticket_attachments")
+}
+
+model HelpCenterCategory {
+  id              Int                  @id @default(autoincrement())
+  publicId        String               @unique @default(cuid())
+  code            String               @unique @db.VarChar(80)
+  titleAr         String               @map("title_ar") @db.VarChar(160)
+  titleEn         String?              @map("title_en") @db.VarChar(160)
+  descriptionAr   String?              @map("description_ar") @db.VarChar(500)
+  descriptionEn   String?              @map("description_en") @db.VarChar(500)
+  icon            String?              @db.VarChar(80)
+  status          SupportContentStatus @default(PUBLISHED)
+  sortOrder       Int                  @default(0) @map("sort_order")
+  createdByUserId Int?                 @map("created_by_user_id")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  createdBy       User?                @relation("HelpCenterCategoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  articles        HelpCenterArticle[]
+  faqs            Faq[]
+
+  @@index([status, sortOrder])
+  @@map("help_center_categories")
+}
+
+model HelpCenterArticle {
+  id              Int                  @id @default(autoincrement())
+  publicId        String               @unique @default(cuid())
+  categoryId      Int?                 @map("category_id")
+  slug            String               @unique @db.VarChar(180)
+  titleAr         String               @map("title_ar") @db.VarChar(220)
+  titleEn         String?              @map("title_en") @db.VarChar(220)
+  summaryAr       String?              @map("summary_ar") @db.VarChar(500)
+  summaryEn       String?              @map("summary_en") @db.VarChar(500)
+  bodyAr          String               @map("body_ar") @db.Text
+  bodyEn          String?              @map("body_en") @db.Text
+  status          SupportContentStatus @default(DRAFT)
+  isFeatured      Boolean              @default(false) @map("is_featured")
+  viewCount       Int                  @default(0) @map("view_count")
+  sortOrder       Int                  @default(0) @map("sort_order")
+  createdByUserId Int?                 @map("created_by_user_id")
+  updatedByUserId Int?                 @map("updated_by_user_id")
+  publishedAt     DateTime?            @map("published_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  category        HelpCenterCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy       User?                @relation("HelpCenterArticleCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedBy       User?                @relation("HelpCenterArticleUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId, status])
+  @@index([status, isFeatured, sortOrder])
+  @@map("help_center_articles")
+}
+
+model Faq {
+  id              Int                  @id @default(autoincrement())
+  publicId        String               @unique @default(cuid())
+  categoryId      Int?                 @map("category_id")
+  questionAr      String               @map("question_ar") @db.VarChar(300)
+  questionEn      String?              @map("question_en") @db.VarChar(300)
+  answerAr        String               @map("answer_ar") @db.Text
+  answerEn        String?              @map("answer_en") @db.Text
+  status          SupportContentStatus @default(PUBLISHED)
+  sortOrder       Int                  @default(0) @map("sort_order")
+  viewCount       Int                  @default(0) @map("view_count")
+  createdByUserId Int?                 @map("created_by_user_id")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  category        HelpCenterCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy       User?                @relation("FaqCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId, status])
+  @@index([status, sortOrder])
+  @@map("faqs")
+}
+
+model WhatsappSupportLink {
+  id              Int                       @id @default(autoincrement())
+  publicId        String                    @unique @default(cuid())
+  department      WhatsappSupportDepartment @default(GENERAL)
+  titleAr         String                    @map("title_ar") @db.VarChar(160)
+  titleEn         String?                   @map("title_en") @db.VarChar(160)
+  phoneE164       String                    @map("phone_e164") @db.VarChar(30)
+  messageTemplate String?                   @map("message_template") @db.VarChar(500)
+  isActive        Boolean                   @default(true) @map("is_active")
+  sortOrder       Int                       @default(0) @map("sort_order")
+  createdByUserId Int?                      @map("created_by_user_id")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  createdBy       User?                     @relation("WhatsappSupportLinkCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([department, isActive])
+  @@map("whatsapp_support_links")
+}
+
+model ProductReview {
+  id          Int          @id @default(autoincrement())
+  publicId    String       @unique @default(cuid())
+  userId      Int          @map("user_id")
+  productId   Int          @map("product_id")
+  orderId     Int?         @map("order_id")
+  rating      Int
+  title       String?      @db.VarChar(160)
+  body        String?      @db.Text
+  status      ReviewStatus @default(PUBLISHED)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     CatalogProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order       Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  replies     ReviewReply[]
+  media       ReviewMedia[]
+  moderationActions ReviewModerationAction[]
+
+  @@unique([userId, productId, orderId], map: "review_product_once_per_order_item")
+  @@index([productId, status])
+  @@index([userId])
+  @@map("review_product_reviews")
+}
+
+model MerchantReview {
+  id             Int          @id @default(autoincrement())
+  publicId       String       @unique @default(cuid())
+  userId         Int          @map("user_id")
+  organizationId Int          @map("organization_id")
+  orderId        Int?         @map("order_id")
+  rating         Int
+  title          String?      @db.VarChar(160)
+  body           String?      @db.Text
+  status         ReviewStatus @default(PUBLISHED)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("MerchantReviews", fields: [organizationId], references: [id], onDelete: Cascade)
+  order          Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  replies        ReviewReply[]
+  media          ReviewMedia[]
+  moderationActions ReviewModerationAction[]
+
+  @@unique([userId, organizationId, orderId], map: "review_merchant_once_per_order")
+  @@index([organizationId, status])
+  @@index([userId])
+  @@map("review_merchant_reviews")
+}
+
+model WorkshopReview {
+  id             Int          @id @default(autoincrement())
+  publicId       String       @unique @default(cuid())
+  userId         Int          @map("user_id")
+  organizationId Int          @map("organization_id")
+  serviceOrderId Int?         @map("service_order_id")
+  rating         Int
+  title          String?      @db.VarChar(160)
+  body           String?      @db.Text
+  status         ReviewStatus @default(PUBLISHED)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("WorkshopReviews", fields: [organizationId], references: [id], onDelete: Cascade)
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  replies        ReviewReply[]
+  media          ReviewMedia[]
+  moderationActions ReviewModerationAction[]
+
+  @@unique([userId, organizationId, serviceOrderId], map: "review_workshop_once_per_service_order")
+  @@index([organizationId, status])
+  @@index([userId])
+  @@map("review_workshop_reviews")
+}
+
+model ServiceReview {
+  id                Int              @id @default(autoincrement())
+  publicId          String           @unique @default(cuid())
+  userId            Int              @map("user_id")
+  organizationId    Int              @map("organization_id")
+  workshopServiceId Int?             @map("workshop_service_id")
+  serviceOrderId    Int              @map("service_order_id")
+  rating            Int
+  title             String?          @db.VarChar(160)
+  body              String?          @db.Text
+  status            ReviewStatus     @default(PUBLISHED)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization     @relation("ServiceReviews", fields: [organizationId], references: [id], onDelete: Cascade)
+  workshopService   WorkshopService? @relation(fields: [workshopServiceId], references: [id], onDelete: SetNull)
+  serviceOrder      ServiceOrder     @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  replies           ReviewReply[]
+  media             ReviewMedia[]
+  moderationActions ReviewModerationAction[]
+
+  @@unique([userId, serviceOrderId], map: "review_service_once_per_order")
+  @@index([organizationId, status])
+  @@index([workshopServiceId, status])
+  @@index([userId])
+  @@map("review_service_reviews")
+}
+
+model ReviewMedia {
+  id              Int              @id @default(autoincrement())
+  publicId        String           @unique @default(cuid())
+  targetType      ReviewTargetType @map("target_type")
+  productReviewId Int?             @map("product_review_id")
+  merchantReviewId Int?            @map("merchant_review_id")
+  workshopReviewId Int?            @map("workshop_review_id")
+  serviceReviewId Int?             @map("service_review_id")
+  uploadedByUserId Int?            @map("uploaded_by_user_id")
+  mediaUrl        String           @map("media_url") @db.VarChar(500)
+  mediaType       String           @default("image") @map("media_type") @db.VarChar(30)
+  sortOrder       Int              @default(0) @map("sort_order")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  productReview   ProductReview?   @relation(fields: [productReviewId], references: [id], onDelete: Cascade)
+  merchantReview  MerchantReview?  @relation(fields: [merchantReviewId], references: [id], onDelete: Cascade)
+  workshopReview  WorkshopReview?  @relation(fields: [workshopReviewId], references: [id], onDelete: Cascade)
+  serviceReview   ServiceReview?   @relation(fields: [serviceReviewId], references: [id], onDelete: Cascade)
+  uploadedBy      User?            @relation("ReviewMediaUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, createdAt])
+  @@index([productReviewId])
+  @@index([merchantReviewId])
+  @@index([workshopReviewId])
+  @@index([serviceReviewId])
+  @@map("review_media")
+}
+
+model ReviewReply {
+  id              Int              @id @default(autoincrement())
+  publicId        String           @unique @default(cuid())
+  targetType      ReviewTargetType @map("target_type")
+  productReviewId Int?             @map("product_review_id")
+  merchantReviewId Int?            @map("merchant_review_id")
+  workshopReviewId Int?            @map("workshop_review_id")
+  serviceReviewId Int?             @map("service_review_id")
+  organizationId  Int              @map("organization_id")
+  authorUserId    Int              @map("author_user_id")
+  body            String           @db.Text
+  status          ReviewReplyStatus @default(PUBLISHED)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  productReview   ProductReview?   @relation(fields: [productReviewId], references: [id], onDelete: Cascade)
+  merchantReview  MerchantReview?  @relation(fields: [merchantReviewId], references: [id], onDelete: Cascade)
+  workshopReview  WorkshopReview?  @relation(fields: [workshopReviewId], references: [id], onDelete: Cascade)
+  serviceReview   ServiceReview?   @relation(fields: [serviceReviewId], references: [id], onDelete: Cascade)
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author          User             @relation("ReviewReplyAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt])
+  @@index([targetType])
+  @@index([productReviewId])
+  @@index([merchantReviewId])
+  @@index([workshopReviewId])
+  @@index([serviceReviewId])
+  @@map("review_replies")
+}
+
+model ReviewModerationAction {
+  id              Int                        @id @default(autoincrement())
+  publicId        String                     @unique @default(cuid())
+  targetType      ReviewTargetType           @map("target_type")
+  productReviewId Int?                       @map("product_review_id")
+  merchantReviewId Int?                      @map("merchant_review_id")
+  workshopReviewId Int?                      @map("workshop_review_id")
+  serviceReviewId Int?                       @map("service_review_id")
+  actorUserId     Int                        @map("actor_user_id")
+  actionType      ReviewModerationActionType @map("action_type")
+  reason          String?                    @db.VarChar(500)
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  productReview   ProductReview?             @relation(fields: [productReviewId], references: [id], onDelete: Cascade)
+  merchantReview  MerchantReview?            @relation(fields: [merchantReviewId], references: [id], onDelete: Cascade)
+  workshopReview  WorkshopReview?            @relation(fields: [workshopReviewId], references: [id], onDelete: Cascade)
+  serviceReview   ServiceReview?             @relation(fields: [serviceReviewId], references: [id], onDelete: Cascade)
+  actor           User                       @relation("ReviewModerationActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([targetType, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([productReviewId])
+  @@index([merchantReviewId])
+  @@index([workshopReviewId])
+  @@index([serviceReviewId])
+  @@map("review_moderation_actions")
+}
+
+model ReviewReputationSummary {
+  id              Int              @id @default(autoincrement())
+  publicId        String           @unique @default(cuid())
+  targetType      ReviewTargetType @map("target_type")
+  targetId        Int              @map("target_id")
+  organizationId  Int?             @map("organization_id")
+  averageRating   Decimal          @default(0) @map("average_rating") @db.Decimal(4, 2)
+  totalReviews    Int              @default(0) @map("total_reviews")
+  rating1Count    Int              @default(0) @map("rating_1_count")
+  rating2Count    Int              @default(0) @map("rating_2_count")
+  rating3Count    Int              @default(0) @map("rating_3_count")
+  rating4Count    Int              @default(0) @map("rating_4_count")
+  rating5Count    Int              @default(0) @map("rating_5_count")
+  reputationScore Decimal          @default(0) @map("reputation_score") @db.Decimal(6, 2)
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@unique([targetType, targetId])
+  @@index([organizationId, targetType])
+  @@index([targetType, reputationScore])
+  @@map("review_reputation_summaries")
+}
+
+
+
+enum WalletOwnerType {
+  USER
+  ORGANIZATION
+}
+
+enum WalletStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum WalletEntryDirection {
+  CREDIT
+  DEBIT
+}
+
+enum WalletEntryType {
+  TOP_UP
+  ORDER_PAYMENT
+  SERVICE_ORDER_PAYMENT
+  REFUND
+  LOYALTY_REDEMPTION
+  ADMIN_ADJUSTMENT
+  CAMPAIGN_REWARD
+  REFERRAL_REWARD
+  PROMOTIONAL_CREDIT
+}
+
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum LoyaltyPointDirection {
+  EARN
+  REDEEM
+  ADJUST
+  EXPIRE
+}
+
+enum LoyaltyPointSource {
+  ORDER_REWARD
+  SERVICE_REWARD
+  COUPON_REWARD
+  WALLET_REDEMPTION
+  ADMIN_ADJUSTMENT
+  CAMPAIGN_REWARD
+  REFERRAL_REWARD
+  PROMOTION
+  REVERSAL
+}
+
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_DELIVERY
+}
+
+enum CouponScope {
+  MARKETPLACE
+  WORKSHOP
+  ALL
+}
+
+enum CouponStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  EXPIRED
+}
+
+enum ReferralCodeStatus {
+  ACTIVE
+  PAUSED
+  DISABLED
+}
+
+enum ReferralRelationshipStatus {
+  PENDING
+  QUALIFIED
+  REWARDED
+  CANCELLED
+}
+
+enum ReferralRewardType {
+  LOYALTY_POINTS
+  WALLET_CREDIT
+}
+
+enum ReferralRewardStatus {
+  PENDING
+  GRANTED
+  CANCELLED
+}
+
+
+enum RetentionChannel {
+  IN_APP
+  FCM
+}
+
+enum RetentionAudienceType {
+  ALL_CUSTOMERS
+  BRONZE_CUSTOMERS
+  SILVER_CUSTOMERS
+  GOLD_CUSTOMERS
+  PLATINUM_CUSTOMERS
+  INACTIVE_CUSTOMERS
+}
+
+enum RetentionCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  PAUSED
+  CANCELLED
+}
+
+enum RetentionEventStatus {
+  QUEUED
+  SENT
+  FAILED
+  OPENED
+}
+
+model WalletAccount {
+  id             Int             @id @default(autoincrement())
+  publicId       String          @unique @default(cuid())
+  ownerType      WalletOwnerType @map("owner_type")
+  userId         Int?            @map("user_id")
+  organizationId Int?            @map("organization_id")
+  currency       String          @default("YER") @db.VarChar(3)
+  balance        Decimal         @default(0) @db.Decimal(14, 2)
+  lockedBalance  Decimal         @default(0) @map("locked_balance") @db.Decimal(14, 2)
+  status         WalletStatus    @default(ACTIVE)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ledgerEntries  WalletLedgerEntry[]
+
+  @@index([userId, currency])
+  @@index([organizationId, currency])
+  @@index([ownerType, status])
+  @@map("wallet_accounts")
+}
+
+model WalletLedgerEntry {
+  id              Int                  @id @default(autoincrement())
+  publicId        String               @unique @default(cuid())
+  walletAccountId Int                  @map("wallet_account_id")
+  direction       WalletEntryDirection
+  entryType       WalletEntryType      @map("entry_type")
+  amount          Decimal              @db.Decimal(14, 2)
+  balanceBefore   Decimal              @map("balance_before") @db.Decimal(14, 2)
+  balanceAfter    Decimal              @map("balance_after") @db.Decimal(14, 2)
+  currency        String               @default("YER") @db.VarChar(3)
+  orderId         Int?                 @map("order_id")
+  serviceOrderId  Int?                 @map("service_order_id")
+  referenceType   String?              @map("reference_type") @db.VarChar(60)
+  referenceId     String?              @map("reference_id") @db.VarChar(120)
+  idempotencyKey  String?              @unique @map("idempotency_key") @db.VarChar(180)
+  description     String?              @db.VarChar(500)
+  metadata        Json?                @map("metadata_json")
+  createdByUserId Int?                 @map("created_by_user_id")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  walletAccount   WalletAccount        @relation(fields: [walletAccountId], references: [id], onDelete: Cascade)
+  order           Order?               @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder    ServiceOrder?        @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  createdBy       User?                @relation("WalletLedgerCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  referralRewards ReferralReward[]
+
+  @@index([walletAccountId, createdAt])
+  @@index([orderId])
+  @@index([serviceOrderId])
+  @@index([entryType, createdAt])
+  @@map("wallet_ledger_entries")
+}
+
+model LoyaltyAccount {
+  id               Int                       @id @default(autoincrement())
+  publicId         String                    @unique @default(cuid())
+  userId           Int                       @unique @map("user_id")
+  pointsBalance    Int                       @default(0) @map("points_balance")
+  lifetimeEarned   Int                       @default(0) @map("lifetime_earned")
+  lifetimeRedeemed Int                       @default(0) @map("lifetime_redeemed")
+  tier             LoyaltyTier               @default(BRONZE)
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     LoyaltyPointTransaction[]
+
+  @@index([tier])
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyPointTransaction {
+  id              Int                   @id @default(autoincrement())
+  publicId        String                @unique @default(cuid())
+  accountId       Int                   @map("account_id")
+  userId          Int                   @map("user_id")
+  direction       LoyaltyPointDirection
+  source          LoyaltyPointSource
+  points          Int
+  balanceAfter    Int                   @map("balance_after")
+  orderId         Int?                  @map("order_id")
+  serviceOrderId  Int?                  @map("service_order_id")
+  paymentId       Int?                  @map("payment_id")
+  shipmentId      Int?                  @map("shipment_id")
+  referenceType   String?               @map("reference_type") @db.VarChar(60)
+  referenceId     String?               @map("reference_id") @db.VarChar(120)
+  idempotencyKey  String?               @unique @map("idempotency_key") @db.VarChar(180)
+  description     String?               @db.VarChar(500)
+  expiresAt       DateTime?             @map("expires_at")
+  createdByUserId Int?                  @map("created_by_user_id")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  account         LoyaltyAccount        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user            User                  @relation("LoyaltyTransactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy       User?                 @relation("LoyaltyTransactionCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  order           Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder    ServiceOrder?         @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  referralRewards ReferralReward[]
+
+  @@index([accountId, createdAt])
+  @@index([userId, createdAt])
+  @@index([orderId])
+  @@index([serviceOrderId])
+  @@map("loyalty_point_transactions")
+}
+
+model Coupon {
+  id                Int                @id @default(autoincrement())
+  publicId          String             @unique @default(cuid())
+  code              String             @unique @db.VarChar(40)
+  titleAr           String             @map("title_ar") @db.VarChar(160)
+  titleEn           String?            @map("title_en") @db.VarChar(160)
+  description       String?            @db.VarChar(500)
+  discountType      CouponDiscountType @map("discount_type")
+  discountValue     Decimal            @map("discount_value") @db.Decimal(12, 2)
+  maxDiscountAmount Decimal?           @map("max_discount_amount") @db.Decimal(12, 2)
+  minOrderAmount    Decimal            @default(0) @map("min_order_amount") @db.Decimal(12, 2)
+  currency          String             @default("YER") @db.VarChar(3)
+  scope             CouponScope        @default(ALL)
+  stackable         Boolean            @default(false)
+  eligibleCategoryIds Json?            @map("eligible_category_ids_json")
+  eligibleServiceIds Json?             @map("eligible_service_ids_json")
+  eligibleMerchantIds Json?            @map("eligible_merchant_ids_json")
+  eligibleWorkshopIds Json?            @map("eligible_workshop_ids_json")
+  usageLimit        Int?               @map("usage_limit")
+  perUserLimit      Int                @default(1) @map("per_user_limit")
+  usedCount         Int                @default(0) @map("used_count")
+  startsAt          DateTime?          @map("starts_at")
+  endsAt            DateTime?          @map("ends_at")
+  status            CouponStatus       @default(DRAFT)
+  createdByUserId   Int?               @map("created_by_user_id")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  createdBy         User?              @relation("CouponCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  redemptions       CouponRedemption[]
+  campaigns         RetentionCampaign[]
+
+  @@index([status, scope])
+  @@index([startsAt, endsAt])
+  @@map("loyalty_coupons")
+}
+
+model CouponRedemption {
+  id              Int           @id @default(autoincrement())
+  publicId        String        @unique @default(cuid())
+  couponId        Int           @map("coupon_id")
+  userId          Int           @map("user_id")
+  orderId         Int?          @map("order_id")
+  serviceOrderId  Int?          @map("service_order_id")
+  discountAmount  Decimal       @map("discount_amount") @db.Decimal(12, 2)
+  currency        String        @default("YER") @db.VarChar(3)
+  redeemedAt      DateTime      @default(now()) @map("redeemed_at")
+  idempotencyKey  String?       @unique @map("idempotency_key") @db.VarChar(180)
+  metadata        Json?         @map("metadata_json")
+  coupon          Coupon        @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order           Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder    ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+
+  @@index([couponId, userId])
+  @@index([orderId])
+  @@index([serviceOrderId])
+  @@index([redeemedAt])
+  @@map("loyalty_coupon_redemptions")
+}
+
+
+model ReferralCode {
+  id              Int                @id @default(autoincrement())
+  publicId        String             @unique @default(cuid())
+  userId          Int                @map("user_id")
+  code            String             @unique @db.VarChar(40)
+  status          ReferralCodeStatus @default(ACTIVE)
+  usesCount       Int                @default(0) @map("uses_count")
+  rewardsCount    Int                @default(0) @map("rewards_count")
+  expiresAt       DateTime?          @map("expires_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  user            User               @relation("ReferralCodeOwner", fields: [userId], references: [id], onDelete: Cascade)
+  relationships   ReferralRelationship[]
+
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@map("referral_codes")
+}
+
+model ReferralRelationship {
+  id              Int                         @id @default(autoincrement())
+  publicId        String                      @unique @default(cuid())
+  referralCodeId  Int                         @map("referral_code_id")
+  referrerUserId  Int                         @map("referrer_user_id")
+  referredUserId  Int                         @unique @map("referred_user_id")
+  qualifyingOrderId Int?                      @map("qualifying_order_id")
+  status          ReferralRelationshipStatus  @default(PENDING)
+  qualifiedAt     DateTime?                   @map("qualified_at")
+  rewardedAt      DateTime?                   @map("rewarded_at")
+  cancelledAt     DateTime?                   @map("cancelled_at")
+  createdAt       DateTime                    @default(now()) @map("created_at")
+  updatedAt       DateTime                    @updatedAt @map("updated_at")
+  referralCode    ReferralCode                @relation(fields: [referralCodeId], references: [id], onDelete: Restrict)
+  referrer        User                        @relation("ReferralReferrer", fields: [referrerUserId], references: [id], onDelete: Restrict)
+  referred        User                        @relation("ReferralReferred", fields: [referredUserId], references: [id], onDelete: Restrict)
+  qualifyingOrder Order?                      @relation(fields: [qualifyingOrderId], references: [id], onDelete: SetNull)
+  rewards         ReferralReward[]
+
+  @@index([referrerUserId, status])
+  @@index([referralCodeId, status])
+  @@index([qualifyingOrderId])
+  @@map("referral_relationships")
+}
+
+model ReferralReward {
+  id              Int                  @id @default(autoincrement())
+  publicId        String               @unique @default(cuid())
+  relationshipId  Int                  @map("relationship_id")
+  userId          Int                  @map("user_id")
+  rewardType      ReferralRewardType   @map("reward_type")
+  status          ReferralRewardStatus @default(PENDING)
+  points          Int?
+  walletAmount    Decimal?             @map("wallet_amount") @db.Decimal(14, 2)
+  currency        String               @default("YER") @db.VarChar(3)
+  orderId         Int?                 @map("order_id")
+  serviceOrderId  Int?                 @map("service_order_id")
+  walletLedgerEntryId Int?             @map("wallet_ledger_entry_id")
+  loyaltyPointTransactionId Int?       @map("loyalty_point_transaction_id")
+  idempotencyKey  String               @unique @map("idempotency_key") @db.VarChar(180)
+  createdByUserId Int?                 @map("created_by_user_id")
+  grantedAt       DateTime?            @map("granted_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  relationship    ReferralRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  user            User                 @relation("ReferralRewardUser", fields: [userId], references: [id], onDelete: Restrict)
+  createdBy       User?                @relation("ReferralRewardCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  order           Order?               @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceOrder    ServiceOrder?        @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  walletLedgerEntry WalletLedgerEntry? @relation(fields: [walletLedgerEntryId], references: [id], onDelete: SetNull)
+  loyaltyPointTransaction LoyaltyPointTransaction? @relation(fields: [loyaltyPointTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([relationshipId, status])
+  @@index([userId, createdAt])
+  @@index([orderId])
+  @@index([serviceOrderId])
+  @@map("referral_rewards")
+}
+
+model RetentionCampaign {
+  id              Int                       @id @default(autoincrement())
+  publicId        String                    @unique @default(cuid())
+  title           String                    @db.VarChar(180)
+  channel         RetentionChannel          @default(IN_APP)
+  audienceType    RetentionAudienceType     @default(ALL_CUSTOMERS) @map("audience_type")
+  status          RetentionCampaignStatus   @default(DRAFT)
+  messageTitle    String                    @map("message_title") @db.VarChar(160)
+  messageBody     String                    @map("message_body") @db.VarChar(500)
+  couponId        Int?                      @map("coupon_id")
+  startsAt        DateTime?                 @map("starts_at")
+  endsAt          DateTime?                 @map("ends_at")
+  sentAt          DateTime?                 @map("sent_at")
+  createdByUserId Int?                      @map("created_by_user_id")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  coupon          Coupon?                   @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  createdBy       User?                     @relation("RetentionCampaignCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  events          RetentionCampaignEvent[]
+
+  @@index([status, audienceType])
+  @@index([startsAt, endsAt])
+  @@map("retention_campaigns")
+}
+
+model RetentionCampaignEvent {
+  id          Int                  @id @default(autoincrement())
+  campaignId  Int                  @map("campaign_id")
+  userId      Int                  @map("user_id")
+  status      RetentionEventStatus @default(QUEUED)
+  deliveredAt DateTime?            @map("delivered_at")
+  openedAt    DateTime?            @map("opened_at")
+  failedReason String?             @map("failed_reason") @db.VarChar(500)
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  campaign    RetentionCampaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([userId, status])
+  @@map("retention_campaign_events")
+}
+
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  publicId    String   @unique @default(cuid())
+  actorUserId Int?     @map("actor_user_id")
+  action      String   @db.VarChar(100)
+  entityType  String?  @map("entity_type") @db.VarChar(80)
+  entityId    String?  @map("entity_id") @db.VarChar(120)
+  method      String?  @db.VarChar(12)
+  path        String?  @db.VarChar(500)
+  ipAddress   String?  @map("ip_address") @db.VarChar(80)
+  userAgent   String?  @map("user_agent") @db.VarChar(500)
+  requestId   String?  @map("request_id") @db.VarChar(120)
+  locale      String?  @db.VarChar(10)
+  metadata    Json?    @map("metadata_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+  @@index([requestId])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  key         String   @id @db.VarChar(120)
+  value       Json?    @map("value_json")
+  valueText   String?  @map("value_text") @db.Text
+  description String?  @db.VarChar(500)
+  isPublic    Boolean  @default(false) @map("is_public")
+  updatedByUserId Int? @map("updated_by_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublic])
+  @@map("system_settings")
+}
+
+enum EventOutboxStatus {
+  PENDING
+  PROCESSING
+  DISPATCHED
+  FAILED
+  CANCELLED
+}
+
+model DomainEventRecord {
+  id             Int             @id @default(autoincrement())
+  publicId       String          @unique @default(cuid())
+  name           String          @db.VarChar(120)
+  aggregateType  String?         @map("aggregate_type") @db.VarChar(80)
+  aggregateId    String?         @map("aggregate_id") @db.VarChar(120)
+  actorUserId    Int?            @map("actor_user_id")
+  source         String?         @db.VarChar(80)
+  idempotencyKey String?         @unique @map("idempotency_key") @db.VarChar(160)
+  payload        Json?           @map("payload_json")
+  occurredAt     DateTime        @default(now()) @map("occurred_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  outboxItems    EventOutbox[]
+  logs           EventLog[]
+
+  @@index([name, createdAt])
+  @@index([aggregateType, aggregateId])
+  @@index([actorUserId, createdAt])
+  @@map("domain_events")
+}
+
+model EventOutbox {
+  id             Int               @id @default(autoincrement())
+  publicId       String            @unique @default(cuid())
+  domainEventId  Int               @map("domain_event_id")
+  eventName      String            @map("event_name") @db.VarChar(120)
+  aggregateType  String?           @map("aggregate_type") @db.VarChar(80)
+  aggregateId    String?           @map("aggregate_id") @db.VarChar(120)
+  destination    String            @default("internal") @db.VarChar(80)
+  payload        Json?             @map("payload_json")
+  status         EventOutboxStatus @default(PENDING)
+  attempts       Int               @default(0)
+  lastError      String?           @map("last_error") @db.Text
+  availableAt    DateTime          @default(now()) @map("available_at")
+  processedAt    DateTime?         @map("processed_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  domainEvent    DomainEventRecord @relation(fields: [domainEventId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([eventName, createdAt])
+  @@index([aggregateType, aggregateId])
+  @@map("event_outbox")
+}
+
+model EventLog {
+  id             Int               @id @default(autoincrement())
+  publicId       String            @unique @default(cuid())
+  domainEventId  Int               @map("domain_event_id")
+  eventName      String            @map("event_name") @db.VarChar(120)
+  status         String            @default("RECORDED") @db.VarChar(40)
+  message        String?           @db.Text
+  metadata       Json?             @map("metadata_json")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  domainEvent    DomainEventRecord @relation(fields: [domainEventId], references: [id], onDelete: Cascade)
+
+  @@index([domainEventId, createdAt])
+  @@index([eventName, createdAt])
+  @@index([status, createdAt])
+  @@map("event_logs")
+}
+
+
+
+model ProductImportTemplate {
+  id              Int                    @id @default(autoincrement())
+  publicId        String                 @unique @default(cuid()) @map("public_id")
+  name            String                 @db.VarChar(140)
+  organizationType String?               @map("organization_type") @db.VarChar(30)
+  requiredColumns Json                   @map("required_columns")
+  optionalColumns Json?                  @map("optional_columns")
+  sampleRows      Json?                  @map("sample_rows")
+  isDefault       Boolean                @default(false) @map("is_default")
+  isActive        Boolean                @default(true) @map("is_active")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  mappings        ProductImportMapping[]
+
+  @@index([organizationType, isActive])
+  @@map("product_import_templates")
+}
+
+model ProductImportMapping {
+  id              Int                    @id @default(autoincrement())
+  organizationId  Int?                   @map("organization_id")
+  templateId      Int?                   @map("template_id")
+  sourceColumn    String                 @map("source_column") @db.VarChar(120)
+  targetField     String                 @map("target_field") @db.VarChar(120)
+  isRequired      Boolean                @default(false) @map("is_required")
+  defaultValue    String?                @map("default_value") @db.VarChar(255)
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  organization    Organization?          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template        ProductImportTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([templateId])
+  @@map("product_import_mappings")
+}
+
+model ProductImportJob {
+  id                Int                  @id @default(autoincrement())
+  publicId          String               @unique @default(cuid()) @map("public_id")
+  organizationId    Int                  @map("organization_id")
+  branchId          Int                  @map("branch_id")
+  uploadedByUserId  Int                  @map("uploaded_by_user_id")
+  fileName          String               @map("file_name") @db.VarChar(255)
+  originalFileName  String               @map("original_file_name") @db.VarChar(255)
+  fileMimeType      String?              @map("file_mime_type") @db.VarChar(120)
+  fileSizeBytes     Int?                 @map("file_size_bytes")
+  status            String               @default("UPLOADED") @db.VarChar(40)
+  totalRows         Int                  @default(0) @map("total_rows")
+  validRows         Int                  @default(0) @map("valid_rows")
+  invalidRows       Int                  @default(0) @map("invalid_rows")
+  importedRows      Int                  @default(0) @map("imported_rows")
+  skippedRows       Int                  @default(0) @map("skipped_rows")
+  currency          String               @default("YER") @db.VarChar(3)
+  parsedAt          DateTime?            @map("parsed_at")
+  confirmedAt       DateTime?            @map("confirmed_at")
+  completedAt       DateTime?            @map("completed_at")
+  failedReason      String?              @map("failed_reason") @db.Text
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch            OrganizationBranch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  uploadedBy        User                 @relation(fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+  rows              ProductImportRow[]
+  errors            ProductImportError[]
+
+  @@index([organizationId, createdAt])
+  @@index([branchId])
+  @@index([uploadedByUserId])
+  @@index([status])
+  @@map("product_import_jobs")
+}
+
+model ProductImportRow {
+  id              Int                  @id @default(autoincrement())
+  jobId           Int                  @map("job_id")
+  rowNumber       Int                  @map("row_number")
+  status          String               @default("PENDING") @db.VarChar(40)
+  rawData         Json                 @map("raw_data")
+  normalizedData  Json?                @map("normalized_data")
+  errorSummary    String?              @map("error_summary") @db.Text
+  productId       Int?                 @map("product_id")
+  listingId       Int?                 @map("listing_id")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  job             ProductImportJob     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  product         CatalogProduct?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  listing         Listing?             @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  errors          ProductImportError[]
+
+  @@unique([jobId, rowNumber])
+  @@index([jobId, status])
+  @@index([productId])
+  @@index([listingId])
+  @@map("product_import_rows")
+}
+
+model ProductImportError {
+  id          Int               @id @default(autoincrement())
+  jobId       Int               @map("job_id")
+  rowId       Int?              @map("row_id")
+  fieldName   String?           @map("field_name") @db.VarChar(120)
+  errorCode   String            @map("error_code") @db.VarChar(80)
+  message     String            @db.VarChar(500)
+  value       String?           @db.VarChar(500)
+  severity    String            @default("ERROR") @db.VarChar(30)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  job         ProductImportJob  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  row         ProductImportRow? @relation(fields: [rowId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([rowId])
+  @@index([errorCode])
+  @@map("product_import_errors")
+}
+
+
+// Phase 22: System hardening, unification, runtime i18n, and analytics snapshots.
+model SystemModule {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique @db.VarChar(80)
+  nameAr         String   @map("name_ar") @db.VarChar(160)
+  nameEn         String   @map("name_en") @db.VarChar(160)
+  route          String?  @db.VarChar(240)
+  icon           String?  @db.VarChar(80)
+  groupCode      String   @map("group_code") @db.VarChar(80)
+  permissionCode String?  @map("permission_code") @db.VarChar(120)
+  sourceModule   String?  @map("source_module") @db.VarChar(80)
+  status         String   @default("ACTIVE") @db.VarChar(30)
+  sortOrder      Int      @default(0) @map("sort_order")
+  metadata       Json?    @map("metadata_json")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([groupCode, sortOrder])
+  @@index([permissionCode])
+  @@index([status])
+  @@map("system_modules")
+}
+
+model TranslationEntry {
+  id              Int      @id @default(autoincrement())
+  translationKey  String   @map("translation_key") @db.VarChar(180)
+  locale          String   @db.VarChar(10)
+  value           String   @db.Text
+  namespace       String   @default("app") @db.VarChar(80)
+  platform        String   @default("GLOBAL") @db.VarChar(40)
+  isSystem        Boolean  @default(false) @map("is_system")
+  updatedByUserId Int?     @map("updated_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([translationKey, locale, platform])
+  @@index([namespace, locale])
+  @@index([updatedByUserId])
+  @@map("translation_entries")
+}
+
+model AnalyticsMetricSnapshot {
+  id            Int      @id @default(autoincrement())
+  metricKey     String   @map("metric_key") @db.VarChar(120)
+  metricGroup   String   @map("metric_group") @db.VarChar(80)
+  metricLabelAr String?  @map("metric_label_ar") @db.VarChar(180)
+  metricLabelEn String?  @map("metric_label_en") @db.VarChar(180)
+  numericValue  Decimal  @default(0) @map("numeric_value") @db.Decimal(18, 2)
+  dimensions    Json?    @map("dimensions_json")
+  sourceModule  String?  @map("source_module") @db.VarChar(80)
+  periodStart   DateTime? @map("period_start")
+  periodEnd     DateTime? @map("period_end")
+  calculatedAt  DateTime @default(now()) @map("calculated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([metricGroup, calculatedAt])
+  @@index([metricKey, calculatedAt])
+  @@index([sourceModule, calculatedAt])
+  @@map("analytics_metric_snapshots")
+}
+
+model SystemAuditFinding {
+  id             Int      @id @default(autoincrement())
+  severity       String   @db.VarChar(20)
+  category       String   @db.VarChar(80)
+  sourceLayer    String   @map("source_layer") @db.VarChar(80)
+  reference      String?  @db.VarChar(180)
+  description    String   @db.Text
+  rootCause      String?  @map("root_cause") @db.Text
+  impact         String?  @db.Text
+  recommendation String?  @db.Text
+  status         String   @default("OPEN") @db.VarChar(30)
+  createdByUserId Int?    @map("created_by_user_id")
+  resolvedByUserId Int?   @map("resolved_by_user_id")
+  resolvedAt     DateTime? @map("resolved_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([severity, status])
+  @@index([category, status])
+  @@index([sourceLayer])
+  @@map("system_audit_findings")
+}
+
+model AuditIntegrityCheckpoint {
+  id             Int      @id @default(autoincrement())
+  checkpointKey  String   @unique @map("checkpoint_key") @db.VarChar(120)
+  lastAuditLogId Int?     @map("last_audit_log_id")
+  checksum       String   @db.VarChar(128)
+  recordCount    Int      @default(0) @map("record_count")
+  metadata       Json?    @map("metadata_json")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([lastAuditLogId])
+  @@map("audit_integrity_checkpoints")
+}
+
+
+enum QaRunStatus {
+  CREATED
+  RUNNING
+  PASSED
+  FAILED
+  BLOCKED
+}
+
+enum QaResultStatus {
+  PASSED
+  FAILED
+  SKIPPED
+  BLOCKED
+}
+
+enum ReleaseCheckStatus {
+  PENDING
+  PASSED
+  FAILED
+  WAIVED
+}
+
+enum DeploymentEnvironment {
+  LOCAL
+  STAGING
+  PRODUCTION
+}
+
+model QaTestRun {
+  id              Int            @id @default(autoincrement())
+  runKey          String         @unique @map("run_key") @db.VarChar(80)
+  title           String         @db.VarChar(180)
+  status          QaRunStatus    @default(CREATED)
+  scope           String         @default("FULL_SYSTEM") @db.VarChar(80)
+  environment     DeploymentEnvironment @default(LOCAL)
+  startedByUserId Int?           @map("started_by_user_id")
+  startedAt       DateTime?      @map("started_at")
+  finishedAt      DateTime?      @map("finished_at")
+  summary         Json?          @map("summary_json")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  results         QaTestResult[]
+
+  @@index([status, createdAt])
+  @@index([environment, createdAt])
+  @@map("qa_test_runs")
+}
+
+model QaTestResult {
+  id          Int            @id @default(autoincrement())
+  runId       Int            @map("run_id")
+  suite       String         @db.VarChar(120)
+  caseKey     String         @map("case_key") @db.VarChar(160)
+  caseTitle   String         @map("case_title") @db.VarChar(240)
+  status      QaResultStatus
+  durationMs  Int?           @map("duration_ms")
+  errorMessage String?       @map("error_message") @db.Text
+  evidence    Json?          @map("evidence_json")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  run         QaTestRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, suite, caseKey])
+  @@index([suite, status])
+  @@index([status, createdAt])
+  @@map("qa_test_results")
+}
+
+model ReleaseChecklistItem {
+  id               Int                @id @default(autoincrement())
+  itemKey          String             @unique @map("item_key") @db.VarChar(120)
+  moduleCode       String             @map("module_code") @db.VarChar(80)
+  titleAr          String             @map("title_ar") @db.VarChar(220)
+  titleEn          String             @map("title_en") @db.VarChar(220)
+  description      String?            @db.Text
+  status           ReleaseCheckStatus @default(PENDING)
+  isRequired       Boolean            @default(true) @map("is_required")
+  evidenceUrl      String?            @map("evidence_url") @db.VarChar(500)
+  verifiedByUserId Int?               @map("verified_by_user_id")
+  verifiedAt       DateTime?          @map("verified_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@index([moduleCode, status])
+  @@index([isRequired, status])
+  @@map("release_checklist_items")
+}
+
+model DeploymentRun {
+  id                Int                   @id @default(autoincrement())
+  deploymentKey     String                @unique @map("deployment_key") @db.VarChar(100)
+  environment       DeploymentEnvironment
+  version           String                @db.VarChar(80)
+  status            String                @default("CREATED") @db.VarChar(30)
+  commitSha         String?               @map("commit_sha") @db.VarChar(80)
+  releaseNotes      String?               @map("release_notes") @db.Text
+  startedByUserId   Int?                  @map("started_by_user_id")
+  startedAt         DateTime?             @map("started_at")
+  completedAt       DateTime?             @map("completed_at")
+  metadata          Json?                 @map("metadata_json")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  @@index([environment, status])
+  @@index([createdAt])
+  @@map("deployment_runs")
+}
+
+model TranslationKey {
+  id          Int                @id @default(autoincrement())
+  key         String             @unique @db.VarChar(220)
+  namespace   String             @default("app") @db.VarChar(80)
+  description String?            @db.Text
+  status      String             @default("PUBLISHED") @db.VarChar(30)
+  isSystem    Boolean            @default(false) @map("is_system")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  values      TranslationValue[]
+
+  @@index([namespace, status])
+  @@map("translation_keys")
+}
+
+model TranslationValue {
+  id               Int      @id @default(autoincrement())
+  translationKeyId Int      @map("translation_key_id")
+  locale           String   @db.VarChar(10)
+  value            String   @db.Text
+  status           String   @default("PUBLISHED") @db.VarChar(30)
+  platform         String   @default("GLOBAL") @db.VarChar(40)
+  publishedAt      DateTime? @map("published_at")
+  updatedByUserId  Int?     @map("updated_by_user_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  translationKey   TranslationKey @relation(fields: [translationKeyId], references: [id], onDelete: Cascade)
+
+  @@unique([translationKeyId, locale, platform])
+  @@index([locale, status])
+  @@index([platform, locale])
+  @@map("translation_values")
+}
